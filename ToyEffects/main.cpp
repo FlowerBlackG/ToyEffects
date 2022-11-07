@@ -8,6 +8,9 @@
 */
 
 #include <ToyGraph/Engine.h>
+#include <ToyGraph/Scene/SceneManager.h>
+
+#include <ToyEffects/scenes/MainScene.h>
 
 #include <memory>
 #include <set>
@@ -22,6 +25,7 @@ const int SCR_HEIGHT = 800;
 
 /**
  * 解析命令行参数。
+ * 参考自 ToyCompile 项目。
  *
  * @param argc main 函数收到的 argc。
  * @param argv main 函数收到的 argv。
@@ -70,76 +74,6 @@ bool parseParams(
     return true;
 }
 
-Camera camera;
-
-float lastX = SCR_WIDTH / 2;
-float lastY = SCR_HEIGHT / 2;
-bool firstMouse = true;
-void mouseCallback(double xPos, double yPos) {
-    if (firstMouse) {
-        lastX = xPos;
-        lastY = yPos;
-        firstMouse = false;
-    }
-
-    float xOff = xPos - lastX;
-    float yOff = lastY - yPos; // reversed: y ranges bottom to top.
-    lastX = xPos;
-    lastY = yPos;
-
-    const float sensitivity = 0.1f;
-    xOff *= sensitivity;
-    yOff *= sensitivity;
-
-    float pitch = camera.getPitch();
-    float yaw = camera.getYaw();
-
-    pitch += yOff;
-    yaw += xOff;
-
-    if (pitch > 89.0f) {
-        pitch = 89.0f;
-    } else if (pitch < -89.0f) {
-        pitch = -89.0f;
-    }
-
-    camera.setPitch(pitch);
-    camera.setYaw(yaw);
-}
-
-void processInput(GLFWwindow* window, float deltaTime) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
-    }
-
-    float cameraSpeed = 2.5f * deltaTime;
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.move(cameraSpeed, camera.getDirectionVectorFront());
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-
-        camera.move(-cameraSpeed, camera.getDirectionVectorFront());
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera.move(-cameraSpeed, camera.getDirectionVectorRight());
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera.move(cameraSpeed, camera.getDirectionVectorRight());
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        camera.move(cameraSpeed, camera.getDirectionVectorUp());
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        camera.move(-cameraSpeed, camera.getDirectionVectorUp());
-    }
-}
-
 int main(const int argc, const char* argv[]) {
     // 解析命令行参数。
     map<string, string> paramMap;
@@ -155,50 +89,9 @@ int main(const int argc, const char* argv[]) {
     // 创造运行环境。
     auto& appRuntime = AppRuntime::getInstance("Toy Effects", SCR_WIDTH, SCR_HEIGHT);
 
-    // 设置相机位置。
-    camera.setPosition(glm::vec3(-4, 2, 0));
-
-    // 绑定回调函数。
-    appRuntime.frameBufferSizeCallback = [&] (int w, int h) {
-        appRuntime.setWindowSize(w, h);
-    };
-
-    appRuntime.cursorPosCallback = mouseCallback;
-    appRuntime.activeKeyInputProcessor = processInput;
-
-    // 加载草神模型。
-    Model model("assets/nahida/nahida.pmx");
-
-    if (model.errcode != ModelError::MODEL_OK) {
-        cout << model.errmsg << endl;
-        return -1;
-    }
-
-    model.setScale(glm::vec3(0.2)) // 缩小。
-        .setYaw(-90);
-
-    // 加载 shader。
-    Shader shader("shaders/shader.vert", "shaders/shader.frag");
-    if (shader.errcode != ShaderError::SHADER_OK) {
-        cout << shader.errmsg << endl;
-        return -2;
-    }
-
-    // 每帧调用。
-    appRuntime.tick = [&](float deltaT) {
-
-        shader.use();
-
-        // transform
-        auto projection = glm::perspective(glm::radians(camera.getFov()), 1.0f * SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-
-        auto view = camera.getViewMatrix();
-        shader.setMatrix4fv("projection", projection)
-            .setMatrix4fv("view", view)
-            .setMatrix4fv("model", model.getModelMatrix());
-
-        model.draw(shader);
-    };
+    // 启动初始场景。
+    auto& sceneMgr = SceneManager::getInstance();
+    sceneMgr.navigateTo(MainScene::constructor);
 
     // 开始运行。
     appRuntime.run();

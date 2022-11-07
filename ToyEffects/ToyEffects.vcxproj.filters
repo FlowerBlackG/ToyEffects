@@ -34,6 +34,18 @@
     <Filter Include="Source Files\components">
       <UniqueIdentifier>{75167796-7149-44f9-9035-074b423a1848}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\components\scenes">
+      <UniqueIdentifier>{86868fa8-3e9c-43b8-925a-317442256615}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\components\scenes\Skybox">
+      <UniqueIdentifier>{5218e144-6c2b-4c12-909f-c05fd0f6d919}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ToyEffects\scenes">
+      <UniqueIdentifier>{c1275c8d-531d-4c2a-bb81-61294f3df6ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ToyEffects\scenes\Skybox">
+      <UniqueIdentifier>{e258ac4b-062f-4bd8-be11-a673f2e376fe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\lib\ToyGraph.lib">
@@ -46,6 +58,18 @@
     </ClCompile>
     <ClCompile Include="lib\include\glm\detail\glm.cpp">
       <Filter>Header Files\glm</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\Skybox\NahidaScene.cpp">
+      <Filter>Source Files\components\scenes\Skybox</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp">
+      <Filter>Source Files\components\scenes\Skybox</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\Skybox\shared.cpp">
+      <Filter>Source Files\components\scenes\Skybox</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\MainScene.cpp">
+      <Filter>Source Files\components\scenes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -942,6 +966,27 @@
     </ClInclude>
     <ClInclude Include="lib\include\glad\glad.h">
       <Filter>Header Files\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\MainScene.h">
+      <Filter>Header Files\ToyEffects\scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\shared.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\NahidaScene.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\PaimonScene.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\include\ToyGraph\Scene\Scene.h">
+      <Filter>Header Files\ToyGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\include\ToyGraph\Scene\SceneManager.h">
+      <Filter>Header Files\ToyGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\include\ToyGraph\Skybox.h">
+      <Filter>Header Files\ToyGraph</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -5,7 +5,18 @@
 
 #pragma once
 #include "ToyGraphCommon/EngineCompileOptions.h"
-#include <ToyGraph/Engine.h>
+
+ // glad & glfw
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
+// stl
+#include <string>
+
+// glm
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 enum class ShaderError {
     UNINITIALIZED,
@@ -23,6 +34,8 @@ enum class ShaderError {
  */
 class Shader {
 public:
+
+    Shader() {};
 
     /**
      * 遇到错误时，不会抛出异常，但是会设置 errcode 和 errmsg。
@@ -93,11 +106,6 @@ public:
     std::string errmsg = "";
 
 protected:
-
-    // 禁止直接构造和复制构造。
-
-    Shader() {}
-    Shader(const Shader& shader) {}
 
     /**
      * 初始化。使用构造函数调用此函数，可以更方便地在中途退出。

@@ -138,11 +138,19 @@
     <Library Include="lib\lib\ToyGraph.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="components\scenes\MainScene.cpp" />
+    <ClCompile Include="components\scenes\Skybox\NahidaScene.cpp" />
+    <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp" />
+    <ClCompile Include="components\scenes\Skybox\shared.cpp" />
     <ClCompile Include="lib\include\glm\detail\glm.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ToyEffects\CompilerOptions.h" />
+    <ClInclude Include="include\ToyEffects\scenes\MainScene.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\NahidaScene.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\PaimonScene.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\shared.h" />
     <ClInclude Include="lib\include\glad\glad.h" />
     <ClInclude Include="lib\include\GLFW\glfw3.h" />
     <ClInclude Include="lib\include\GLFW\glfw3native.h" />
@@ -439,7 +447,10 @@
     <ClInclude Include="lib\include\ToyGraph\Model\Mesh.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Model.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Texture.h" />
+    <ClInclude Include="lib\include\ToyGraph\Scene\Scene.h" />
+    <ClInclude Include="lib\include\ToyGraph\Scene\SceneManager.h" />
     <ClInclude Include="lib\include\ToyGraph\Shader.h" />
+    <ClInclude Include="lib\include\ToyGraph\Skybox.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="lib\include\glm\detail\func_common.inl" />

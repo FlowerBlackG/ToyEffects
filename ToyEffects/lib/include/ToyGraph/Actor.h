@@ -15,11 +15,15 @@
 #include <functional>
 #include <cmath>
 #include <map>
+#include <vector>
 
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <ToyGraph/Shader.h>
+
 
 /**
  * 演员类。
@@ -40,7 +44,7 @@ public: // 构造和析构。
     /**
      * 演员类析构函数。完成内存释放等清理工作。
      */
-    virtual ~Actor() {}
+    virtual ~Actor();
 
 public: // 心跳。
 
@@ -49,9 +53,13 @@ public: // 心跳。
      * 
      * @param deltaSeconds 帧间隔时间。单位为秒。
      */
-    std::function<void (float deltaSeconds)> tick = [] (...) {};
+    virtual void tick(float deltaSeconds) {
+        for (auto it : children) {
+            it->tick(deltaSeconds);
+        }
+    };
     
-    std::function<void ()> render = [] () {};
+    virtual void render(class Shader* pShader = nullptr);
 
 public: // setters and getters.
 
@@ -84,9 +92,16 @@ public: // setters and getters.
     virtual Actor& setScale(const glm::vec3& scale);
     virtual const glm::vec3& getScale();
 
+    void addChild(Actor* actor);
+    void bindModel(class Model* model);
+    void setShader(int shaderId);
+
 public: // 一般方法。
     virtual void move(float distance, const glm::vec3& direction);
     glm::mat4 getModelMatrix();
+
+public: 
+    int id = 0;
 
 protected: // 自动工具成员。外部一般不直接操作。
     glm::vec3 directionVectorUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -134,6 +149,12 @@ protected: // 内部成员。
      * 缩放。
      */
     glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    std::vector<Actor*> children;
+    Actor* parent = nullptr;
+    class Model* pModel = nullptr;
+
+    class Shader shader;
 
 private: // 禁止内容。
 

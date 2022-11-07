@@ -6,6 +6,7 @@
 #pragma once
 #include "ToyGraphCommon/EngineCompileOptions.h"
 #include <ToyGraph/Engine.h>
+#include <array>
 
 enum class AppRuntimeError {
     RUNTIME_OK,
@@ -63,30 +64,16 @@ public: // tick control.
     void run(); 
 
 public:
+
+    std::function<void (int width, int height)> frameBufferSizeCallback = [&] (int w, int h) {
+        this->setWindowSize(w, h);
+    };
+
     AppRuntimeError errcode = AppRuntimeError::RUNTIME_OK;
     std::string errmsg;
 
+    std::array<int, GLFW_KEY_LAST + 1> lastFrameKeyStatus;
 
-public: // callables.
-    std::function<void (
-        int width, int height
-    )> frameBufferSizeCallback = [] (...) {};
-
-    std::function<void (
-        double xPos, double yPos
-    )> cursorPosCallback = [] (...) {};
-
-    /**
-     * 主动按键输入处理回调。
-     * 调用时，由函数判断是否真的有按键按下。
-     */
-    std::function<void (
-        GLFWwindow* window, float deltaT
-    )> activeKeyInputProcessor = [] (...) {};
-
-    std::function<void (
-        float deltaT
-    )> tick = [] (...) {}; 
 
 protected: // 属性。
     GLFWwindow* window = nullptr;

@@ -24,7 +24,7 @@ enum class ModelError {
 };
 
 
-class Model : public Actor {
+class Model {
 
 public:
     Model() = default;
@@ -50,8 +50,6 @@ protected:
 
     std::vector<class Mesh> meshes;
     std::string directory;
-
-    
 
     void processNode(aiNode* node, const aiScene* scene, CodePage binaryFileCp);
     
