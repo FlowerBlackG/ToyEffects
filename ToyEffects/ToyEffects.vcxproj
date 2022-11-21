@@ -139,12 +139,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="components\scenes\MainScene.cpp" />
+    <ClCompile Include="components\scenes\Mirror\Mirror.cpp" />
     <ClCompile Include="components\scenes\Skybox\NahidaScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\shared.cpp" />
+    <ClCompile Include="components\scenes\Skybox\WaterScene.cpp" />
     <ClCompile Include="lib\include\glm\detail\glm.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="WaterScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ToyEffects\CompilerOptions.h" />
