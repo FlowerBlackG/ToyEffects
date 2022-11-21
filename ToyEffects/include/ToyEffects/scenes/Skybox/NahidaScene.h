@@ -30,6 +30,18 @@ public:
         "shaders/shader.frag"
     };
 
+    Shader screenShader{
+        "shaders/postprocess-screen-shader.vert",
+        "shaders/postprocess-screen-shader.frag"
+    };
+
+    GLuint fbo = 0;
+    GLuint scrQuadVao;
+    GLuint scrQuadVbo;
+    GLuint textureColorbuffer;
+    
+    int postProcessEffect = 0;
+    const int N_EFFECTS = 6;
 };
 
 

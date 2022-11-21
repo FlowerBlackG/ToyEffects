@@ -71,7 +71,7 @@
     <ClCompile Include="components\scenes\MainScene.cpp">
       <Filter>Source Files\components\scenes</Filter>
     </ClCompile>
-    <ClCompile Include="WaterScene.cpp">
+    <ClCompile Include="components\scenes\Skybox\WaterScene.cpp">
       <Filter>Source Files\components\scenes\Skybox</Filter>
     </ClCompile>
   </ItemGroup>
