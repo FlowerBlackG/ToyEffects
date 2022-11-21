@@ -3,6 +3,7 @@
 #include <ToyGraph/Scene/SceneManager.h>
 #include <ToyEffects/scenes/Skybox/PaimonScene.h>
 #include <ToyEffects/scenes/Skybox/NahidaScene.h>
+#include <ToyEffects/scenes/Skybox/WaterScene.h>
 
 #include <vector>
 #include <string>
@@ -99,13 +100,19 @@ void MainScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
     ) {
         SceneManager::getInstance().navigateTo(NahidaScene::constructor);
     }
-
     
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS
+        && runtime.lastFrameKeyStatus[GLFW_KEY_N] == GLFW_RELEASE
+        ) {
+        SceneManager::getInstance().navigateTo(WaterScene::constructor);
+    }
+
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS 
         && runtime.lastFrameKeyStatus[GLFW_KEY_B] == GLFW_RELEASE
     ) {
         SceneManager::getInstance().navigateBack(); 
     }
+
     
 }
 

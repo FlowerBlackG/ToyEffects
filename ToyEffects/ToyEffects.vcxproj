@@ -144,13 +144,16 @@
     <ClCompile Include="components\scenes\Skybox\shared.cpp" />
     <ClCompile Include="lib\include\glm\detail\glm.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="WaterScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ToyEffects\CompilerOptions.h" />
     <ClInclude Include="include\ToyEffects\scenes\MainScene.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\3Dmath.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\NahidaScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\PaimonScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\shared.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterScene.h" />
     <ClInclude Include="lib\include\glad\glad.h" />
     <ClInclude Include="lib\include\GLFW\glfw3.h" />
     <ClInclude Include="lib\include\GLFW\glfw3native.h" />

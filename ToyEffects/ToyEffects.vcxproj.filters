@@ -71,6 +71,9 @@
     <ClCompile Include="components\scenes\MainScene.cpp">
       <Filter>Source Files\components\scenes</Filter>
     </ClCompile>
+    <ClCompile Include="WaterScene.cpp">
+      <Filter>Source Files\components\scenes\Skybox</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ToyEffects\CompilerOptions.h">
@@ -987,6 +990,12 @@
     </ClInclude>
     <ClInclude Include="lib\include\ToyGraph\Skybox.h">
       <Filter>Header Files\ToyGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterScene.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\3Dmath.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
