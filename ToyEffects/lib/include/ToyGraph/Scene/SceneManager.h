@@ -37,7 +37,7 @@ private: // ÀΩ”–≥…‘±°£
     std::vector<class Scene*> sceneStack;
 
 private:
-    SceneManager() {};
+    SceneManager();
     SceneManager(const SceneManager&) {};
 
 };
