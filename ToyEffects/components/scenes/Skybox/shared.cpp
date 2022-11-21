@@ -1,13 +1,15 @@
 
 #include <ToyGraph/Engine.h>
 #include <ToyGraph/Scene/SceneManager.h>
-#include <ToyGraph/Scene/Scene.h>
 #include <ToyEffects/scenes/Skybox/PaimonScene.h>
 #include <ToyEffects/scenes/Skybox/NahidaScene.h>
+#include <ToyEffects/scenes/Skybox/WaterScene.h>
+#include <ToyEffects/scenes/Skybox/shared.h>
 
 static float lastX = 0;
 static float lastY = 0;
 static bool firstMouse = true;
+
 
 void __nahidaPaimonSharedCursorPosCallback(double xPos, double yPos) {
     if (firstMouse) {
@@ -88,7 +90,12 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
         SceneManager::getInstance().navigateTo(PaimonScene::constructor);
     }
 
-    
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS
+        && runtime.lastFrameKeyStatus[GLFW_KEY_P] == GLFW_RELEASE
+        ) {
+        SceneManager::getInstance().navigateTo(WaterScene::constructor);
+    }
+
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS 
         && runtime.lastFrameKeyStatus[GLFW_KEY_N] == GLFW_RELEASE
     ) {

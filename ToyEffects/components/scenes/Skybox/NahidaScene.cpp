@@ -47,7 +47,7 @@ void NahidaScene::render() {
 
 
     for (auto it : this->actors) {
-        
+        glm::mat4 t= it.second->getModelMatrix();
         nahidaShader.setMatrix4fv("model", it.second->getModelMatrix());
         it.second->render(&nahidaShader);
     }
@@ -82,4 +82,7 @@ NahidaScene::NahidaScene() {
     }
 
 }
+
+
+
 
