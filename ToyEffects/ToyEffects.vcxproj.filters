@@ -46,6 +46,9 @@
     <Filter Include="Header Files\ToyEffects\scenes\Skybox">
       <UniqueIdentifier>{e258ac4b-062f-4bd8-be11-a673f2e376fe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\shaders">
+      <UniqueIdentifier>{e4a3940c-a88f-479a-9496-3f224c5e2ee1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\lib\ToyGraph.lib">
@@ -72,6 +75,9 @@
       <Filter>Source Files\components\scenes</Filter>
     </ClCompile>
     <ClCompile Include="components\scenes\Skybox\WaterScene.cpp">
+      <Filter>Source Files\components\scenes\Skybox</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\Skybox\VCloudScene.cpp">
       <Filter>Source Files\components\scenes\Skybox</Filter>
     </ClCompile>
   </ItemGroup>
@@ -997,6 +1003,9 @@
     <ClInclude Include="include\ToyEffects\scenes\Skybox\3Dmath.h">
       <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
     </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\VCloudScene.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="lib\include\glm\detail\func_common.inl">
@@ -1406,6 +1415,42 @@
     </None>
     <None Include="lib\include\glm\gtx\wrap.inl">
       <Filter>Header Files\glm</Filter>
+    </None>
+    <None Include="..\shaders\skybox\skybox.frag">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="..\shaders\skybox\skybox.vert">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\cube.fs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\cube.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\postprocess-screen-shader.frag">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\postprocess-screen-shader.vert">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\shader.frag">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\shader.vert">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\VolumeCloud\sky.frag">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\VolumeCloud\sky.vert">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\VolumeCloud\tex.frag">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\VolumeCloud\tex.vert">
+      <Filter>Source Files\shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -142,6 +142,7 @@
     <ClCompile Include="components\scenes\Skybox\NahidaScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\shared.cpp" />
+    <ClCompile Include="components\scenes\Skybox\VCloudScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\WaterScene.cpp" />
     <ClCompile Include="lib\include\glm\detail\glm.cpp" />
     <ClCompile Include="main.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="include\ToyEffects\scenes\Skybox\NahidaScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\PaimonScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\shared.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\VCloudScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterScene.h" />
     <ClInclude Include="lib\include\glad\glad.h" />
     <ClInclude Include="lib\include\GLFW\glfw3.h" />
@@ -456,6 +458,8 @@
     <ClInclude Include="lib\include\ToyGraph\Skybox.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\shaders\skybox\skybox.frag" />
+    <None Include="..\shaders\skybox\skybox.vert" />
     <None Include="lib\include\glm\detail\func_common.inl" />
     <None Include="lib\include\glm\detail\func_common_simd.inl" />
     <None Include="lib\include\glm\detail\func_exponential.inl" />
@@ -592,6 +596,16 @@
     <None Include="lib\include\glm\gtx\vector_angle.inl" />
     <None Include="lib\include\glm\gtx\vector_query.inl" />
     <None Include="lib\include\glm\gtx\wrap.inl" />
+    <None Include="shaders\cube.fs" />
+    <None Include="shaders\cube.vs" />
+    <None Include="shaders\postprocess-screen-shader.frag" />
+    <None Include="shaders\postprocess-screen-shader.vert" />
+    <None Include="shaders\shader.frag" />
+    <None Include="shaders\shader.vert" />
+    <None Include="shaders\VolumeCloud\sky.frag" />
+    <None Include="shaders\VolumeCloud\sky.vert" />
+    <None Include="shaders\VolumeCloud\tex.frag" />
+    <None Include="shaders\VolumeCloud\tex.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
