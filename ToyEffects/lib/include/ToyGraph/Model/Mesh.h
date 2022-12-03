@@ -28,7 +28,7 @@ public:
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
     std::vector<struct Texture> textures;
-
+    int indexCount;
 
     Mesh(
         std::vector<Vertex>& vertices,
@@ -42,7 +42,10 @@ public:
      * 注入内容完毕，应立即调用 setupMesh()。
      */
     Mesh();
-    
+
+    void CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int numOfVertices, unsigned int numOfIndices);
+    void RenderMesh();
+
     void setupMesh();
 
     /**
@@ -74,3 +77,4 @@ protected:
 
 
 };
+

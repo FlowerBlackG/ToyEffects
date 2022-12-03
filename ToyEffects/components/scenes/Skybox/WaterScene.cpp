@@ -1,745 +1,530 @@
-#include <ToyEffects/scenes/Skybox/WaterScene.h>
+ï»¿#include <ToyEffects/scenes/Skybox/WaterScene.h>
 #include <ToyGraph/Scene/SceneManager.h>
+#include <ToyGraph/Material.h>
+#include <ToyGraph/Light.h>
+#include <ToyGraph/shader.h>
 #include <ToyEffects/scenes/Skybox/shared.h>
 #include <iostream>
 #include <random>
 #include <complex>
-
+//æš‚æ—¶
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 
+////æ•°å­¦å¸¸é‡
+//static const float PI = 3.141592f;
+//static const float ONE_OVER_SQRT_2 = 0.7071067f;	//æ ¹å·2åˆ†ä¹‹1
+//static const float ONE_OVER_SQRT_TWO_PI = 0.39894228f;
+////å…ˆå†™åœ¨å…¨å±€å˜é‡ï¼Œåˆ›å»ºwaterç±»äº†å†å°è£…
+//unsigned int				initial = 0;			// åˆå§‹å…‰è°±,h0(å…±è½­)
+//unsigned int				frequencies = 0;		// é¢‘ç‡ w_i æ¯ä¸ªæ³¢å‘é‡
+//unsigned int				updated[2] = { 0 };		// updated spectra h~(k,t)å’ŒD~(k,t)
+//unsigned int				tempdata = 0;			// ä¸­é—´å˜é‡ FT
+//unsigned int				displacement = 0;		// ä½ç§»å›¾
+//unsigned int				gradients = 0;			// æ³•çº¿æŠ˜å è´´å›¾
+//uint32_t					numlods = 0;
+//unsigned int				perlintex = 0;		// Perlin å™ªå£° to remove tiling artifacts
+//unsigned int				environment = 0;
+//unsigned int				debugvao = 0;
+//unsigned int				helptext = 0;
 
-//ºê¶¨Òå
-#define DISP_MAP_SIZE		512					// 1024 ×î´ó£¬Éú³ÉµÄÏñËØ
-#define PATCH_SIZE			20.0f				// m
-#define WIND_DIRECTION		{ -0.4f, -0.9f }	//·çÏòÁ¿·½Ïò
-#define WIND_SPEED			6.5f				// m/s  ·çËÙ
-#define AMPLITUDE_CONSTANT	(0.45f * 1e-3f)		// Phillips ÆÁÆ×µÄA
-#define GRAV_ACCELERATION	9.81f				// m/s^2 ¼ÓËÙ¶È
-#define MESH_SIZE			64					// [64, 256]
-#define FURTHEST_COVER		8					// º£Ñó×î´óÃæ»ı= PATCH_SIZE * (1 << FURTHEST_COVER)
-#define MAX_COVERAGE		64.0f				// pixel limit for a distant patch to be rendered
-//ÎªopenglÍØÕ¹apiÄÚglet.hÖĞµÄÄÚÈİ£¬ºóÆÚÉ¾
-#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84ff
-#define GL_TEXTURE_MAX_ANISOTROPY_EXT     0x84FE
+//unsigned int VAO;
+Texture waterTexture;
+Material waterMaterial;
+Light mainLight;
 
-static const int IndexCounts[] = {
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	961920,		// 64x64
-	3705084,	// 128x128
-	14500728	// 256x256
-};
-float square_vertices[] = {
-	// positions          // normals           // texture coords
-	// µÚÒ»¸öÈı½ÇĞÎ
-	0.5f, 0.5f, 0.0f,   // ÓÒÉÏ½Ç
-	0.5f, -0.5f, 0.0f,  // ÓÒÏÂ½Ç
-	-0.5f, 0.5f, 0.0f,  // ×óÉÏ½Ç
-	// µÚ¶ş¸öÈı½ÇĞÎ
-	0.5f, -0.5f, 0.0f,  // ÓÒÏÂ½Ç
-	-0.5f, -0.5f, 0.0f, // ×óÏÂ½Ç
-	-0.5f, 0.5f, 0.0f   // ×óÉÏ½Ç
+GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformUvScroll = 0, uniformEyePosition = 0,
+uniformAmbientIntensity = 0, uniformAmbientColor = 0, uniformDirection = 0, uniformDiffuseIntensity = 0,
+uniformSpecularIntensity = 0, uniformShininess = 0;
 
-};
-unsigned int VBO, VAO;
-
-
-//ÊıÑ§³£Á¿
-static const float PI = 3.141592f;
-static const float ONE_OVER_SQRT_2 = 0.7071067f;	//¸ùºÅ2·ÖÖ®1
-static const float ONE_OVER_SQRT_TWO_PI = 0.39894228f;
-//ÏÈĞ´ÔÚÈ«¾Ö±äÁ¿£¬´´½¨waterÀàÁËÔÙ·â×°
-unsigned int				initial = 0;			// ³õÊ¼¹âÆ×,h0(¹²éî)
-unsigned int				frequencies = 0;		// ÆµÂÊ w_i Ã¿¸ö²¨ÏòÁ¿
-unsigned int				updated[2] = { 0 };		// updated spectra h~(k,t)ºÍD~(k,t)
-unsigned int				tempdata = 0;			// ÖĞ¼ä±äÁ¿ FT
-unsigned int				displacement = 0;		// Î»ÒÆÍ¼
-unsigned int				gradients = 0;			// ·¨ÏßÕÛµşÌùÍ¼
-uint32_t					numlods = 0;
-unsigned int				perlintex = 0;		// Perlin ÔëÉù to remove tiling artifacts
-unsigned int				environment = 0;
-unsigned int				debugvao = 0;
-unsigned int				helptext = 0;
-
-
-//°Ñwn±ê×¼»¯
+//æŠŠwnæ ‡å‡†åŒ–
 void Vec2Normalize(glm::vec2& out, glm::vec2& v);
-//ÇóÏòÁ¿³¤¶È£¬¿ÉÌæ»»¿â
+//æ±‚å‘é‡é•¿åº¦ï¼Œå¯æ›¿æ¢åº“
 float Vec2Length(const glm::vec2& v);
-//Çólog2xµÄÕûÊı
+//æ±‚log2xçš„æ•´æ•°
 uint32_t Log2OfPow2(uint32_t x);
 
+void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int numOfVertices, unsigned int numOfIndices)
+{
+	indexCount = numOfIndices;
 
-//ÏÈÔÚÕâÀïĞ´£¬ÆäÊµÓ¦¸Ãµ÷ÓÃ
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[0]) * numOfIndices, indices, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(indices[0]) * numOfVertices, vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, 0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 3));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 5));
+	glEnableVertexAttribArray(2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void Mesh::RenderMesh()
+{
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void Texture::setfileLocation(char* s)
+{
+	fileLocation = s;
+}
+
+void Texture::LoadTexture()
+{
+	unsigned char* texData = stbi_load(fileLocation, &width, &height, &bitDepth, 0);
+	if (!texData)
+	{
+		printf("Could not find: %s\n", fileLocation);
+		return;
+	}
+
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	stbi_image_free(texData);
+}
+
+void Texture::UseTexture()
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, id);
+}
+
+void Shader::read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryShaderFilePath)
+{
+	//cout << vertexShaderFilePath;
+	ifstream vShaderFile(vertexShaderFilePath, ios::binary);
+	ifstream fShaderFile(fragmentShaderFilePath, ios::binary);
+	ifstream gShaderFile(geometryShaderFilePath, ios::binary);
+
+	if (!vShaderFile.is_open()) {
+		errmsg = "failed to open vertex shader file.";
+		errcode = ShaderError::V_SHADER_OPEN_FAILED;
+		return;
+	}
+
+	if (!fShaderFile.is_open()) {
+		errmsg = "failed to open fragment shader file.";
+		errcode = ShaderError::F_SHADER_OPEN_FAILED;
+		return;
+	}
+	if (!gShaderFile.is_open()) {
+		errmsg = "failed to open geometry shader file.";
+		errcode = ShaderError::F_SHADER_OPEN_FAILED;
+		return;
+	}
+	stringstream vShaderStream;
+	stringstream fShaderStream;
+	stringstream gShaderStream;
+	vShaderStream << vShaderFile.rdbuf();
+	fShaderStream << fShaderFile.rdbuf();
+	gShaderStream << gShaderFile.rdbuf();
+
+	string stdVShaderCode = vShaderStream.str();
+	string stdFShaderCode = fShaderStream.str();
+	string stdGShaderCode = gShaderStream.str();
+	const char* vShaderCode = stdVShaderCode.c_str();
+	const char* fShaderCode = stdFShaderCode.c_str();
+	const char* gShaderCode = stdGShaderCode.c_str();
+
+	GLuint vertexId;
+	GLuint fragmentId;
+	GLuint geoId;
+	int success;
+	char infoLog[512];
+
+	vertexId = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexId, 1, &vShaderCode, nullptr);
+	glCompileShader(vertexId);
+	glGetShaderiv(vertexId, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(vertexId, sizeof(infoLog) / sizeof(char), nullptr, infoLog);
+		errcode = ShaderError::V_SHADER_COMPILE_FAILED;
+		errmsg = "failed to compile vertex shader. ";
+		errmsg += infoLog;
+		return;
+	}
+
+	fragmentId = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentId, 1, &fShaderCode, nullptr);
+	glCompileShader(fragmentId);
+	glGetShaderiv(fragmentId, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(fragmentId, sizeof(infoLog), nullptr, infoLog);
+		errcode = ShaderError::F_SHADER_COMPILE_FAILED;
+		errmsg = "failed to compile fragment shader. ";
+		errmsg += infoLog;
+		return;
+	}
+
+	//geoId = glCreateShader(GL_GEOMETRY_SHADER);
+	//glShaderSource(geoId, 1, &gShaderCode, nullptr);
+	//glCompileShader(geoId);
+	//glGetShaderiv(geoId, GL_COMPILE_STATUS, &success);
+	//if (!success) {
+	//	glGetShaderInfoLog(geoId, sizeof(infoLog), nullptr, infoLog);
+	//	errcode = ShaderError::F_SHADER_COMPILE_FAILED;
+	//	errmsg = "failed to compile geometry shader. ";
+	//	errmsg += infoLog;
+	//	return;
+	//}
+
+	this->id = glCreateProgram();
+	glAttachShader(id, vertexId);
+	glAttachShader(id, fragmentId);
+	//	glAttachShader(id, geoId);
+	glLinkProgram(id);
+	glGetProgramiv(id, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(id, sizeof(infoLog), nullptr, infoLog);
+		errcode = ShaderError::LINKING_FAILED;
+		errmsg = "failed to link program. ";
+		errmsg += infoLog;
+		return;
+	}
+
+	glValidateProgram(id);
+	glGetProgramiv(id, GL_VALIDATE_STATUS, &success);
+	if (!success)
+	{
+		glGetProgramInfoLog(id, sizeof(infoLog), nullptr, infoLog);
+		printf("Program Validation FAILED: '%s'\n", infoLog);
+		return;
+	}
+
+	uniformModel = glGetUniformLocation(id, "model");
+	uniformProjection = glGetUniformLocation(id, "projection");
+	uniformView = glGetUniformLocation(id, "view");
+	uniformAmbientColor = glGetUniformLocation(id, "directionalLight.colour");
+	uniformAmbientIntensity = glGetUniformLocation(id, "directionalLight.ambientIntensity");
+	uniformDirection = glGetUniformLocation(id, "directionalLight.direction");
+	uniformDiffuseIntensity = glGetUniformLocation(id, "directionalLight.diffuseIntensity");
+	uniformSpecularIntensity = glGetUniformLocation(id, "material.specularIntensity");
+	uniformShininess = glGetUniformLocation(id, "material.shininess");
+	uniformEyePosition = glGetUniformLocation(id, "eyePosition");
+
+	uniformUvScroll = glGetUniformLocation(id, "uvScroll");
+
+
+	//glDeleteShader(vertexId);
+	//glDeleteShader(fragmentId);
+	//	glDeleteShader(geoId);
+
+	vShaderFile.close();
+	fShaderFile.close();
+	gShaderFile.close();
+
+	this->errcode = ShaderError::SHADER_OK;
+
+}
+
+//å…ˆåœ¨è¿™é‡Œå†™ï¼Œå…¶å®åº”è¯¥è°ƒç”¨
 void WaterScene::cursorPosCallback(double xPos, double yPos) {
-    __nahidaPaimonSharedCursorPosCallback(xPos, yPos);
+	__nahidaPaimonSharedCursorPosCallback(xPos, yPos);
 }
 
 void WaterScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
-    __nahidaPaimonSharedActiveKeyInputProcessor(window, deltaTime);
+	__nahidaPaimonSharedActiveKeyInputProcessor(window, deltaTime);
 
 }
 
 
 WaterScene::~WaterScene() {
-    if (this->pSkybox) {
-        delete this->pSkybox;
-    }
+	if (this->pSkybox) {
+		delete this->pSkybox;
+	}
 
 }
-//Ê±¿Ì¸Ä±äÎ»ÖÃ£¬ÕâÀï²»ĞèÒª
+void WaterScene::calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
+	unsigned int vLength, unsigned int normalOffset, int hVertices)
+{
+	int counter = 0;
+	for (size_t i = 0; i < indiceCount; i++)
+	{
+		unsigned int in0 = indices[i] * vLength;
+		unsigned int in1 = indices[i + 1] * vLength;
+		unsigned int in2 = indices[i + 2] * vLength;
+		glm::vec3 v1(vertices[in1] - vertices[in0], vertices[in1 + 1] - vertices[in0 + 1], vertices[in1 + 2] - vertices[in0 + 2]);
+		glm::vec3 v2(vertices[in2] - vertices[in0], vertices[in2 + 1] - vertices[in0 + 1], vertices[in2 + 2] - vertices[in0 + 2]);
+		glm::vec3 normal = glm::cross(v1, v2);
+		normal = glm::normalize(normal);
+
+		in0 += normalOffset; in1 += normalOffset; in2 += normalOffset;
+		vertices[in0] += normal.x; vertices[in0 + 1] += normal.y; vertices[in0 + 2] += normal.z;
+		vertices[in1] += normal.x; vertices[in1 + 1] += normal.y; vertices[in1 + 2] += normal.z;
+		vertices[in2] += normal.x; vertices[in2 + 1] += normal.y; vertices[in2 + 2] += normal.z;
+
+		if (counter == 2 * hVertices - 3)
+		{
+			counter = 0;
+			i += 4;
+			continue;
+		}
+
+		counter++;
+	}
+
+	for (size_t i = 0; i < verticeCount / vLength; i++)
+	{
+		unsigned int nOffset = i * vLength + normalOffset;
+		glm::vec3 vec(vertices[nOffset], vertices[nOffset + 1], vertices[nOffset + 2]);
+		vec = glm::normalize(vec);
+		vertices[nOffset] = vec.x; vertices[nOffset + 1] = vec.y; vertices[nOffset + 2] = vec.z;
+	}
+}
+
+void WaterScene::CreateStrip(int hVertices, int â€‹vVertices, float size)
+{
+	/*GLuint indices[] = {0, 4, 1, 5, 2, 6, 3, 7,
+						7, 4,
+						4, 8, 5, 9, 6, 10, 7, 11,
+						11, 8,
+						8, 12, 9, 13, 10, 14, 11, 15};*/
+
+	GLuint* indices = new GLuint[2 * hVertices * (â€‹vVertices - 1) + 2 * (â€‹vVertices - 2)];
+
+	//Setting the odd numbered indices
+	int number = 0;
+	int hIndex = 0;
+	for (int i = 0; i < 2 * hVertices * (â€‹vVertices - 1) + 2 * (â€‹vVertices - 2); i += 2)
+	{
+		indices[i] = number;
+		number++;
+
+		if (hIndex == 2 * hVertices - 2)
+		{
+			i += 2;
+			hIndex = 0;
+			continue;
+		}
+
+		hIndex += 2;
+	}
+
+	//Setting the even numbered indices
+	number = hVertices;
+	hIndex = 1;
+	for (int i = 1; i < 2 * hVertices * (â€‹vVertices - 1) + 2 * (â€‹vVertices - 2); i += 2)
+	{
+		indices[i] = number;
+		number++;
+
+		if (hIndex == 2 * hVertices - 1)
+		{
+			i += 2;
+			hIndex = 1;
+			continue;
+		}
+
+		hIndex += 2;
+	}
+
+	//Setting the connecting indices
+	number = 0;
+	for (int i = hVertices * 2; i < 2 * hVertices * (â€‹vVertices - 1) + 2 * (â€‹vVertices - 2); i += hVertices * 2 + 2)
+	{
+		indices[i] = hVertices * 2 - 1 + (number * hVertices);
+		indices[i + 1] = hVertices + (number * hVertices);
+		number++;
+	}
+
+	//GLfloat vertices[] = {
+	//	//x			y			z			u		v			normalX		normalY		normalZ
+	//	0.0f,		0.0f,		0.0f,		0.0f,	1.0f,		0.0f,		0.0f,		0.0f,
+	//	size,		0.0f,		0.0f,		0.33f,	1.0f,		0.0f,		0.0f,		0.0f,
+	//	2 * size,	0.0f,		0.0f,		0.66f,	1.0f,		0.0f,		0.0f,		0.0f,
+	//	3 * size,	0.0f,		0.0f,		1.0f,	1.0f,		0.0f,		0.0f,		0.0f,
+
+	//	0.0f,		-size,		0.0f,		0.0f,	0.66f,		0.0f,		0.0f,		0.0f,
+	//	size,		-size,		0.0f,		0.33f,	0.66f,		0.0f,		0.0f,		0.0f,
+	//	2 * size,	-size,		0.0f,		0.66f,	0.66f,		0.0f,		0.0f,		0.0f,
+	//	3 * size,	-size,		0.0f,		1.0f,	0.66f,		0.0f,		0.0f,		0.0f,
+
+	//	0.0f,		-2 * size,	0.0f,		0.0f,	0.33f,		0.0f,		0.0f,		0.0f,
+	//	size,		-2 * size,	0.0f,		0.33f,	0.33f,		0.0f,		0.0f,		0.0f,
+	//	2 * size,	-2 * size,	0.0f,		0.66f,	0.33f,		0.0f,		0.0f,		0.0f,
+	//	3 * size,	-2 * size,	0.0f,		1.0f,	0.33f,		0.0f,		0.0f,		0.0f,
+
+	//	0.0f,		-3 * size,	0.0f,		0.0f,	0.0f,		0.0f,		0.0f,		0.0f,
+	//	size,		-3 * size,	0.0f,		0.33f,	0.0f,		0.0f,		0.0f,		0.0f,
+	//	2 * size,	-3 * size,	0.0f,		0.66f,	0.0f,		0.0f,		0.0f,		0.0f,
+	//	3 * size,	-3 * size,	0.0f,		1.0f,	0.0f,		0.0f,		0.0f,		0.0f
+	//};
+
+	GLfloat* vertices = new GLfloat[hVertices * â€‹vVertices * 8];
+	int xMultiplier = 0;
+	int yMultiplier = 0;
+	float uIncrement = 0.0f;
+	float vIncrement = 1.0f;
+	for (int i = 0; i < hVertices * â€‹vVertices * 8; i += 8)
+	{
+		vertices[i] = xMultiplier * size;				//x
+		vertices[i + 1] = yMultiplier * (-size);		//y
+		vertices[i + 2] = 0;							//z
+		vertices[i + 3] = uIncrement;					//u
+		vertices[i + 4] = vIncrement;					//v
+		vertices[i + 5] = 0.0f;							//normalX
+		vertices[i + 6] = 0.0f;							//normalY
+		vertices[i + 7] = 0.0f;							//normalZ
+
+		xMultiplier++;
+		uIncrement += (1.0f / (hVertices - 1));
+
+		if (xMultiplier == hVertices)
+		{
+			xMultiplier = 0;
+			yMultiplier++;
+			uIncrement = 0.0f;
+			vIncrement -= (1.0f / (â€‹vVertices - 1));
+		}
+	}
+
+	calculateAverageNormals(indices, 2 * hVertices * (â€‹vVertices - 1) + 2 * (â€‹vVertices - 2), vertices, hVertices * â€‹vVertices * 8, 8, 5, hVertices);
+
+	Mesh* obj1 = new Mesh;// (GL_TRIANGLE_STRIP);
+	obj1->CreateMesh(vertices, indices, hVertices * â€‹vVertices * 8, 2 * hVertices * (â€‹vVertices - 1) + 2 * (â€‹vVertices - 2));
+	meshList.push_back(obj1);
+}
+
+//æ—¶åˆ»æ”¹å˜ä½ç½®ï¼Œè¿™é‡Œä¸éœ€è¦
 void WaterScene::tick(float deltaT) {
-    auto cube1 = this->actors[0];
-    //cube1->setYaw(cube1->getYaw() + deltaT * 20);
+
+	auto cube1 = this->actors[0];
+	//cube1->setYaw(cube1->getYaw() + deltaT * 20);
 }
 
 
 void WaterScene::render() {
-    auto& runtime = AppRuntime::getInstance();
+	auto& runtime = AppRuntime::getInstance();
 
-    pSkybox->render();
+	pSkybox->render();
+	RenderWater();
 
-    cube.use();
-    auto view = camera->getViewMatrix();
-    auto projection = glm::perspective(
-        glm::radians(camera->getFov()),
-        1.0f * runtime.getWindowWidth() / runtime.getWindowHeight(),
-        0.1f,
-        100.0f
-    );
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(45.0f), glm::vec3(1.0f, 0.3f, 0.5f));
-    model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-
-    cube.setMatrix4fv("projection", projection)
-        .setMatrix4fv("view", view)
-        .setMatrix4fv("model", model);
-
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+	//for (auto it : this->actors) {
+	//    it.second->render(&shaderList[0]);
+	//}
 
 
-    for (auto it : this->actors) {
-        it.second->render(&cube);
-    }
-
-	
 }
 
 WaterScene::WaterScene() {
+	auto& runtime = AppRuntime::getInstance();
 
-    vector<string> skyboxFaces({
-        "assets/SpaceboxCollection/Spacebox3/LightGreen_right1.png",
-        "assets/SpaceboxCollection/Spacebox3/LightGreen_left2.png",
-        "assets/SpaceboxCollection/Spacebox3/LightGreen_top3.png",
-        "assets/SpaceboxCollection/Spacebox3/LightGreen_bottom4.png",
-        "assets/SpaceboxCollection/Spacebox3/LightGreen_front5.png",
-        "assets/SpaceboxCollection/Spacebox3/LightGreen_back6.png"
-        });
+	vector<string> skyboxFaces({
+		"assets/SpaceboxCollection/Spacebox3/LightGreen_right1.png",
+		"assets/SpaceboxCollection/Spacebox3/LightGreen_left2.png",
+		"assets/SpaceboxCollection/Spacebox3/LightGreen_top3.png",
+		"assets/SpaceboxCollection/Spacebox3/LightGreen_bottom4.png",
+		"assets/SpaceboxCollection/Spacebox3/LightGreen_front5.png",
+		"assets/SpaceboxCollection/Spacebox3/LightGreen_back6.png"
+		});
 
-    pSkybox = new Skybox(skyboxFaces);
+	pSkybox = new Skybox(skyboxFaces);
 
-	InitScene();
+	camera = SceneManager::getInstance().currentScene()->camera;
+	//if (pCamera == camera)
+	//	cout << "YES" << endl;
+	//auto& camera = *pCamera;
+	//Camera *pcamera = SceneManager::getInstance().currentScene()->camera;
+	//this->camera = new Camera;
+	camera->setPosition(glm::vec3(0.0f, 2.0f, 5.0f));
 
-    Actor* cube1 = new Actor;
-    cube1->setScale(glm::vec3(1.0));
-    this->addActor(cube1);
+	int hVert = 32;
+	int vVert = 32;
 
-    // äÖÈ¾Ò»¸ö´ø²ÄÖÊµÄÕı·½Ìå,½øĞĞÒ»Ğ©ÉèÖÃ
+	CreateStrip(hVert, vVert, 0.5f);
 
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    //Éú³É²¢°ó¶¨VAOºÍVBO
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // ½«¶¥µãÊı¾İ°ó¶¨ÖÁµ±Ç°Ä¬ÈÏµÄ»º³åÖĞ
-    glBufferData(GL_ARRAY_BUFFER, sizeof(square_vertices), square_vertices, GL_STATIC_DRAW);
-    // ÉèÖÃ¶¥µãÊôĞÔÖ¸Õë
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    //glEnableVertexAttribArray(1);
-    //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    //glEnableVertexAttribArray(2);
+	Shader ocean;
+	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs","../shaders/ocean/ocean.geom");
 
-    this->camera = new Camera;
-    //camera->setPosition(glm::vec3(-10, 0, 0));
 
-    if (cube.errcode != ShaderError::SHADER_OK) {
-        cout << "cube shader err: " << cube.errmsg << endl;
-    }
+	shaderList.push_back(ocean);
+
+	waterTexture .setfileLocation((char*)("textures/water.png"));
+	waterTexture.LoadTexture();
+
+	waterMaterial = Material(1.0f, 64);
+
+	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f,0.5, 0.5f, 0.5f, 1.0f);
+
+
+	//glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f);
+	projection = glm::perspective(
+		glm::radians(camera->getFov()),
+		1.0f * runtime.getWindowWidth() / runtime.getWindowHeight(),
+		0.1f,
+		100.0f
+	);
 	cnt = 0;
 }
 
-
-bool WaterScene::InitScene()
+void WaterScene::RenderWater()
 {
-	auto& runtime = AppRuntime::getInstance();
 
-	std::mt19937 gen;//Ëæ»úÊı
-	std::normal_distribution<> gaussian(0.0, 1.0);//ÕıÌ¬·Ö²¼£¬ÆÚÍû0£¬·½²î1
-	GLint maxanisotropy = 1;		//¸÷ÏòÒìĞÔ£¬Ê²Ã´ÍæÒâ..
+	glClearColor(0.15f, 0.15f, 0.15f, 0.15f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	uint32_t screenwidth = runtime.getWindowWidth();
-	uint32_t screenheight = runtime.getWindowHeight();
+	//__nahidaPaimonSharedActiveKeyInputProcessor(window, deltaTime);
 
+	shaderList[0].use();
 
-	// setup OpenGL
-	glClearColor(0.0f, 0.125f, 0.3f, 1.0f);
-	glClearDepth(1.0);
+	Shader first = shaderList[0];
+	glUseProgram(first.getId());
+	glUniform1f(uniformUvScroll, glfwGetTime() / 2.5);
 
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
+	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 
-	//Í¼ÔªÖØÆô(Primitive restart) ÔÊĞíÓÃ»§»æÖÆ²»Á¬ĞøµÄ¡¢·ÖÉ¢µÄÍ¼ĞÎ
-	//Óöµ½Õâ¸öÖµµÄÊ±ºò£¬OpenGL²»»á»æÖÆÍ¼Ôª£¬¶øÊÇ½áÊøÉÏÒ»¶Î»æÖÆ£¬È»ºóÖØĞÂÆô¶¯ĞÂµÄ»æÖÆ
-	glEnable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
+	glm::mat4 model;
 
-	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxanisotropy);
-	maxanisotropy = max(maxanisotropy, 2);
+	model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(135.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.5f));
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	waterTexture.UseTexture();
+	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[0]->RenderMesh();
 
-	// Éú³É³õÊ¼ÆµÆ×ºÍÆµÂÊ
-	glm::vec2 k;
-	float L = PATCH_SIZE;
+	/*model = glm::mat4();
+	model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, modelRotation * toRadians, glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	meshList[1]->RenderMesh();*/
 
-	glGenTextures(1, &initial);
-	glGenTextures(1, &frequencies);
-
-	glBindTexture(GL_TEXTURE_2D, initial);
-	//²»¶®¡£°ó¸öÍ¼Ïñ£¿
-	//ÎÆÀí»æÖÆ»á½«Ö¸¶¨ ÎÆÀíÍ¼Ïñ µÄÒ»²¿·ÖÓ³Éäµ½ÆôÓÃÎÆÀíµÄÃ¿¸öÍ¼ĞÎ»ùÔª
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG32F, DISP_MAP_SIZE + 1, DISP_MAP_SIZE + 1);
-
-	glBindTexture(GL_TEXTURE_2D, frequencies);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, DISP_MAP_SIZE + 1, DISP_MAP_SIZE + 1);
-
-	// nÔÚ[-N / 2, N / 2]ÖĞ
-	int start = DISP_MAP_SIZE / 2;
-
-	// ÎªÁË¶Ô³Æ,  (N + 1) x (N + 1) 
-	//½¨Á¢Ò»¸ö¸´ÊıÊı×é,´æ´¢ÓÉÕıÌ¬·Ö²¼Ëæ»úÊıËã³öÀ´µÄh0(k)°ÎÊı¾İ
-	complex<float>* h0data = new complex<float>[(DISP_MAP_SIZE + 1) * (DISP_MAP_SIZE + 1)];
-
-	float* wdata = new float[(DISP_MAP_SIZE + 1) * (DISP_MAP_SIZE + 1)];
-
-	glm::vec2 w = WIND_DIRECTION;		//·çÏòÁ¿
-	glm::vec2 wn;
-	float V = WIND_SPEED;				//·çËÙ
-	float A = AMPLITUDE_CONSTANT;		//PHilipÆµÆ×µÄA
-
-	cout << "¼ÆËã¸ß¶È³¡£¬´òÓ¡Ç°50Ïî" << endl;
-	//°Ñw±ê×¼»¯¸øwn,wÏÈ²»¶¯£¬ËùÒÔÕâÀï²»ÓÃ¿âº¯Êı
-	Vec2Normalize(wn, w);
-	//±éÀúm,n£¬¼ÆËãËùÓĞµÄwºÍh0Öµ£¬¹Ì¶¨Öµ
-	for (int m = 0; m <= DISP_MAP_SIZE; ++m)
-	{
-		k.y = ((2 * PI) * (start - m)) / L;
-
-		for (int n = 0; n <= DISP_MAP_SIZE; ++n) {
-			k.x = ((2 * PI) * (start - n)) / L;
-
-			int index = m * (DISP_MAP_SIZE + 1) + n;
-			float sqrt_P_h = 0;
-
-			if (k.x != 0.0f || k.y != 0.0f)
-				sqrt_P_h = sqrtf(Phillips(k, wn, V, A));
-
-			h0data[index].real((float)(sqrt_P_h * gaussian(gen) * ONE_OVER_SQRT_2));
-			h0data[index].imag((float)(sqrt_P_h * gaussian(gen) * ONE_OVER_SQRT_2));
-			// ¼ÆËã·çÏòÁ¿ w^2(k) = gk
-			wdata[index] = sqrtf(GRAV_ACCELERATION * Vec2Length(k));
-			//Ö»´òÓ¡Ò»´Î
-			if (cnt <= 50) {
-				cout << "m:" << m << "    " << "n:" << n << "    ";
-				cout <<"h~0(m,n):"<< h0data[index].real() << "+" << h0data[index].imag() << "i" << endl;
-				cout << "index: " << index << "    ·çÏòÁ¿w2(k):" << wdata[index] << endl << endl;;
-				cnt ++;
-			}
-
-
-		}
-	}
-
-
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISP_MAP_SIZE + 1, DISP_MAP_SIZE + 1, GL_RED, GL_FLOAT, wdata);
-
-	glBindTexture(GL_TEXTURE_2D, initial);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISP_MAP_SIZE + 1, DISP_MAP_SIZE + 1, GL_RG, GL_FLOAT, h0data);
-
-	delete[] wdata;
-	delete[] h0data;
-
-	// ´´½¨ÆäËûÆµÆ×ÌùÍ¼
-	glGenTextures(2, updated);
-	glBindTexture(GL_TEXTURE_2D, updated[0]);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG32F, DISP_MAP_SIZE, DISP_MAP_SIZE);
-
-	glBindTexture(GL_TEXTURE_2D, updated[1]);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG32F, DISP_MAP_SIZE, DISP_MAP_SIZE);
-
-	glGenTextures(1, &tempdata);
-	glBindTexture(GL_TEXTURE_2D, tempdata);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG32F, DISP_MAP_SIZE, DISP_MAP_SIZE);
-
-	// Î»ÒÆÍ¼Ïñ£¬Ê²Ã´ÒâË¼°¡£¿
-	glGenTextures(1, &displacement);
-	glBindTexture(GL_TEXTURE_2D, displacement);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, DISP_MAP_SIZE, DISP_MAP_SIZE);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	// create gradient & folding map
-	glGenTextures(1, &gradients);
-	glBindTexture(GL_TEXTURE_2D, gradients);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, DISP_MAP_SIZE, DISP_MAP_SIZE);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxanisotropy / 2);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// Shader LODÆäÊµ¾ÍÊÇ¸ù¾İÉè±¸ĞÔÄÜµÄ²»Í¬±àÒë²»Í¬°æ±¾µÄShader
-	// ´´½¨Íø¸ñºÍLOD¼¶±ğ(¿ÉÄÜÔÚÎ´À´Ê¹ÓÃtess shader),,°¡£¿£¿
-	//OpenGLVertexElement decl[] = {
-	//	{ 0, 0, GLDECLTYPE_FLOAT3, GLDECLUSAGE_POSITION, 0 },
-	//	{ 0xff, 0, 0, 0, 0 }
-	//};
-
-	//numlods = Log2OfPow2(MESH_SIZE);
-
-	//if (!GLCreateMesh((MESH_SIZE + 1) * (MESH_SIZE + 1), IndexCounts[numlods], GLMESH_32BIT, decl, &oceanmesh))
-	//	return false;
-
-	//OpenGLAttributeRange* subsettable = nullptr;
-	//glm::vec3* vdata = nullptr;
-	//uint32_t* idata = nullptr;
-	//unsigned int numsubsets = 0;
-
-	//oceanmesh->LockVertexBuffer(0, 0, GLLOCK_DISCARD, (void**)&vdata);
-	//oceanmesh->LockIndexBuffer(0, 0, GLLOCK_DISCARD, (void**)&idata);
-	//{
-	//	float tilesize = PATCH_SIZE / MESH_SIZE;
-
-	//	// vertex data
-	//	for (int z = 0; z <= MESH_SIZE; ++z) {
-	//		for (int x = 0; x <= MESH_SIZE; ++x) {
-	//			int index = z * (MESH_SIZE + 1) + x;
-
-	//			vdata[index].x = (float)x;
-	//			vdata[index].y = (float)z;
-	//			vdata[index].z = 0.0f;
-	//		}
-	//	}
-
-	//	// index data
-	//	GenerateLODLevels(&subsettable, &numsubsets, idata);
-	//}
-	//oceanmesh->UnlockIndexBuffer();
-	//oceanmesh->UnlockVertexBuffer();
-
-	//oceanmesh->SetAttributeTable(subsettable, numsubsets);
-	//delete[] subsettable;
-
-	//// load shaders
-	//char defines[128];
-
-	//sprintf_s(defines, "#define DISP_MAP_SIZE	%d\n#define LOG2_DISP_MAP_SIZE	%d\n#define TILE_SIZE_X2	%.4f\n#define INV_TILE_SIZE	%.4f\n",
-	//	DISP_MAP_SIZE,
-	//	Log2OfPow2(DISP_MAP_SIZE),
-	//	PATCH_SIZE * 2.0f / DISP_MAP_SIZE,
-	//	DISP_MAP_SIZE / PATCH_SIZE);
-
-	//if (!GLCreateEffectFromFile("shaders/ocean/screenquad.vert", 0, 0, 0, "shaders/ocean/debugspectra.frag", &debugeffect, defines))
-	//	return false;
-
-	//if (!GLCreateComputeProgramFromFile("shaders/ocean/updatespectrum.comp", &updatespectrum, defines))
-	//	return false;
-
-	//if (!GLCreateComputeProgramFromFile("shaders/ocean/fourier_dft.comp", &fourier_dft, defines))
-	//	return false;
-
-	//if (!GLCreateComputeProgramFromFile("shaders/ocean/fourier_fft.comp", &fourier_fft, defines))
-	//	return false;
-
-	//if (!GLCreateComputeProgramFromFile("shaders/ocean/createdisplacement.comp", &createdisp, defines))
-	//	return false;
-
-	//if (!GLCreateComputeProgramFromFile("shaders/ocean/creategradients.comp", &creategrad, defines))
-	//	return false;
-
-	//if (!GLCreateEffectFromFile("shaders/ocean/ocean.vert", 0, 0, 0, "shaders/ocean/ocean.frag", &oceaneffect, defines))
-	//	return false;
-
-	//if (!GLCreateEffectFromFile("shaders/ocean/ocean.vert", 0, 0, 0, "shaders/ocean/simplecolor.frag", &wireeffect, defines))
-	//	return false;
-
-
-	//screenquad = new OpenGLScreenQuad();
-
-	//// NOTE: can't query image bindings
-	//updatespectrum->SetInt("tilde_h0", 0);
-	//updatespectrum->SetInt("frequencies", 1);
-	//updatespectrum->SetInt("tilde_h", 2);
-	//updatespectrum->SetInt("tilde_D", 3);
-
-	//fourier_dft->SetInt("readbuff", 0);
-	//fourier_dft->SetInt("writebuff", 1);
-
-	//fourier_fft->SetInt("readbuff", 0);
-	//fourier_fft->SetInt("writebuff", 1);
-
-	//createdisp->SetInt("heightmap", 0);
-	//createdisp->SetInt("choppyfield", 1);
-	//createdisp->SetInt("displacement", 2);
-
-	//creategrad->SetInt("displacement", 0);
-	//creategrad->SetInt("gradients", 1);
-
-	//oceaneffect->SetInt("displacement", 0);
-	//oceaneffect->SetInt("perlin", 1);
-	//oceaneffect->SetInt("envmap", 2);
-	//oceaneffect->SetInt("gradients", 3);
-
-	//float white[] = { 1, 1, 1, 1 };
-
-	//wireeffect->SetInt("displacement", 0);
-	//wireeffect->SetInt("perlin", 1);
-	//wireeffect->SetVector("matColor", white);
-
-	//skyeffect->SetInt("sampler0", 0);
-	//debugeffect->SetInt("sampler0", 0);
-
-	//// other
-	//if (!GLCreateTextureFromFile("../../Media/Textures/perlin_noise.dds", false, &perlintex))
-	//	return false;
-
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxanisotropy / 2);
-
-
-	//if (!GLCreateCubeTextureFromDDS("../../Media/Textures/ocean_env.dds", true, &environment))
-	//	return false;
-
-	//glGenVertexArrays(1, &debugvao);
-	//glBindVertexArray(debugvao);
-	//{
-	//	// empty
-	//}
-	//glBindVertexArray(0);
-
-	//// init quadtree
-	//float ocean_extent = PATCH_SIZE * (1 << FURTHEST_COVER);
-	//float ocean_start[2] = { -0.5f * ocean_extent, -0.5f * ocean_extent };
-
-	//tree.Initialize(ocean_start, ocean_extent, (int)numlods, MESH_SIZE, PATCH_SIZE, MAX_COVERAGE, (float)(screenwidth * screenheight));
-
-	// render text
-	//GLCreateTexture(512, 512, 1, GLFMT_A8B8G8R8, &helptext);
-
-	//GLRenderText(
-	//	"Use WASD and mouse to move around\n1-8: Change ocean color\n\nT - Toggle FFT/DFT\nR - Toggle debug camera\nH - Toggle help text",
-	//	helptext, 512, 512);
-
-	return true;
+	glUseProgram(0);
 }
-
-void WaterScene::UninitScene()
-{
-	//delete oceanmesh;
-	//delete skyeffect;
-	//delete oceaneffect;
-	//delete wireeffect;
-	//delete debugeffect;
-	//delete updatespectrum;
-	//delete fourier_dft;
-	//delete fourier_fft;
-	//delete createdisp;
-	//delete creategrad;
-	//delete screenquad;
-
-	glDeleteVertexArrays(1, &debugvao);
-
-	glDeleteTextures(1, &displacement);
-	glDeleteTextures(1, &gradients);
-	glDeleteTextures(1, &initial);
-	glDeleteTextures(1, &frequencies);
-	glDeleteTextures(2, updated);
-	glDeleteTextures(1, &tempdata);
-	glDeleteTextures(1, &environment);
-	glDeleteTextures(1, &perlintex);
-	glDeleteTextures(1, &helptext);
-
-	//OpenGLContentManager().Release();
-}
-
-// Phillips²¨ĞÎ
- float WaterScene::Phillips(const glm::vec2& k, const glm::vec2& w, float V, float A)
-{
-	float L = (V * V) / GRAV_ACCELERATION;	// largest possible wave for wind speed V
-	float l = L / 1000.0f;					// supress waves smaller than this
-
-	float kdotw =glm::dot(k, w);
-	float k2 = glm::dot(k, k);			// squared length of wave vector k
-
-	// k^6 because k must be normalized
-	float P_h = A * (expf(-1.0f / (k2 * L * L))) / (k2 * k2 * k2) * (kdotw * kdotw);
-
-	if (kdotw < 0.0f) {
-		// wave is moving against wind direction w
-		P_h *= 0.07f;
-	}
-
-	return P_h * expf(-k2 * l * l);
-}
-
- unsigned int WaterScene::GenerateBoundaryMesh(int deg_left, int deg_top, int deg_right, int deg_bottom, int levelsize, uint32_t* idata)
- {
-#define CALC_BOUNDARY_INDEX(x, z) \
-	((z) * (MESH_SIZE + 1) + (x))
-	 // END
-
-	 unsigned int numwritten = 0;
-
-	 // top edge
-	 if (deg_top < levelsize) {
-		 int t_step = levelsize / deg_top;
-
-		 for (int i = 0; i < levelsize; i += t_step) {
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(i, 0);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + t_step / 2, 1);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + t_step, 0);
-
-			 for (int j = 0; j < t_step / 2; ++j) {
-				 if (i == 0 && j == 0 && deg_left < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i, 0);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j, 1);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j + 1, 1);
-			 }
-
-			 for (int j = t_step / 2; j < t_step; ++j) {
-				 if (i == levelsize - t_step && j == t_step - 1 && deg_right < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + t_step, 0);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j, 1);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j + 1, 1);
-			 }
-		 }
-	 }
-
-	 // left edge
-	 if (deg_left < levelsize) {
-		 int l_step = levelsize / deg_left;
-
-		 for (int i = 0; i < levelsize; i += l_step) {
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(0, i);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(0, i + l_step);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(1, i + l_step / 2);
-
-			 for (int j = 0; j < l_step / 2; ++j) {
-				 if (i == 0 && j == 0 && deg_top < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(0, i);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(1, i + j + 1);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(1, i + j);
-			 }
-
-			 for (int j = l_step / 2; j < l_step; ++j) {
-				 if (i == levelsize - l_step && j == l_step - 1 && deg_bottom < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(0, i + l_step);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(1, i + j + 1);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(1, i + j);
-			 }
-		 }
-	 }
-
-	 // right edge
-	 if (deg_right < levelsize) {
-		 int r_step = levelsize / deg_right;
-
-		 for (int i = 0; i < levelsize; i += r_step) {
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize, i);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize - 1, i + r_step / 2);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize, i + r_step);
-
-			 for (int j = 0; j < r_step / 2; ++j) {
-				 if (i == 0 && j == 0 && deg_top < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize, i);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize - 1, i + j);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize - 1, i + j + 1);
-			 }
-
-			 for (int j = r_step / 2; j < r_step; ++j) {
-				 if (i == levelsize - r_step && j == r_step - 1 && deg_bottom < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize, i + r_step);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize - 1, i + j);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(levelsize - 1, i + j + 1);
-			 }
-		 }
-	 }
-
-	 // bottom edge
-	 if (deg_bottom < levelsize) {
-		 int b_step = levelsize / deg_bottom;
-
-		 for (int i = 0; i < levelsize; i += b_step) {
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(i, levelsize);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + b_step, levelsize);
-			 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + b_step / 2, levelsize - 1);
-
-			 for (int j = 0; j < b_step / 2; ++j) {
-				 if (i == 0 && j == 0 && deg_left < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i, levelsize);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j + 1, levelsize - 1);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j, levelsize - 1);
-			 }
-
-			 for (int j = b_step / 2; j < b_step; ++j) {
-				 if (i == levelsize - b_step && j == b_step - 1 && deg_right < levelsize)
-					 continue;
-
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + b_step, levelsize);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j + 1, levelsize - 1);
-				 idata[numwritten++] = CALC_BOUNDARY_INDEX(i + j, levelsize - 1);
-			 }
-		 }
-	 }
-
-	 return numwritten;
- }
-
-// void WaterScene::GenerateLODLevels(OpenGLAttributeRange** subsettable, unsigned int* numsubsets, uint32_t* idata)
-// {
-//#define CALC_INNER_INDEX(x, z) \
-//	((top + (z)) * (MESH_SIZE + 1) + left + (x))
-//	 // END
-//
-//	 assert(subsettable);
-//	 assert(numsubsets);
-//
-//	 *numsubsets = (numlods - 2) * 3 * 3 * 3 * 3 * 2;
-//	 *subsettable = new OpenGLAttributeRange[*numsubsets];
-//
-//	 int currsubset = 0;
-//	 unsigned int indexoffset = 0;
-//	 unsigned int numwritten = 0;
-//	 OpenGLAttributeRange* subset = 0;
-//
-//	 //int numrestarts = 0;
-//
-//	 for (uint32_t level = 0; level < numlods - 2; ++level) {
-//		 int levelsize = MESH_SIZE >> level;
-//		 int mindegree = levelsize >> 3;
-//
-//		 for (int left_degree = levelsize; left_degree > mindegree; left_degree >>= 1) {
-//			 for (int right_degree = levelsize; right_degree > mindegree; right_degree >>= 1) {
-//				 for (int bottom_degree = levelsize; bottom_degree > mindegree; bottom_degree >>= 1) {
-//					 for (int top_degree = levelsize; top_degree > mindegree; top_degree >>= 1) {
-//						 int right = ((right_degree == levelsize) ? levelsize : levelsize - 1);
-//						 int left = ((left_degree == levelsize) ? 0 : 1);
-//						 int bottom = ((bottom_degree == levelsize) ? levelsize : levelsize - 1);
-//						 int top = ((top_degree == levelsize) ? 0 : 1);
-//
-//						 // generate inner mesh (triangle strip)
-//						 int width = right - left;
-//						 int height = bottom - top;
-//
-//						 numwritten = 0;
-//
-//						 for (int z = 0; z < height; ++z) {
-//							 if ((z & 1) == 1) {
-//								 idata[numwritten++] = CALC_INNER_INDEX(0, z);
-//								 idata[numwritten++] = CALC_INNER_INDEX(0, z + 1);
-//
-//								 for (int x = 0; x < width; ++x) {
-//									 idata[numwritten++] = CALC_INNER_INDEX(x + 1, z);
-//									 idata[numwritten++] = CALC_INNER_INDEX(x + 1, z + 1);
-//								 }
-//
-//								 idata[numwritten++] = UINT32_MAX;
-//								 //++numrestarts;
-//							 }
-//							 else {
-//								 idata[numwritten++] = CALC_INNER_INDEX(width, z + 1);
-//								 idata[numwritten++] = CALC_INNER_INDEX(width, z);
-//
-//								 for (int x = width - 1; x >= 0; --x) {
-//									 idata[numwritten++] = CALC_INNER_INDEX(x, z + 1);
-//									 idata[numwritten++] = CALC_INNER_INDEX(x, z);
-//								 }
-//
-//								 idata[numwritten++] = UINT32_MAX;
-//								 //++numrestarts;
-//							 }
-//						 }
-//
-//						 // add inner subset
-//						 subset = ((*subsettable) + currsubset);
-//
-//						 subset->AttribId = currsubset;
-//						 subset->Enabled = (numwritten > 0);
-//						 subset->IndexCount = numwritten;
-//						 subset->IndexStart = indexoffset;
-//						 subset->PrimitiveType = GL_TRIANGLE_STRIP;
-//						 subset->VertexCount = 0;
-//						 subset->VertexStart = 0;
-//
-//						 indexoffset += numwritten;
-//						 idata += numwritten;
-//
-//						 ++currsubset;
-//
-//						 // generate boundary mesh (triangle list)
-//						 numwritten = GenerateBoundaryMesh(left_degree, top_degree, right_degree, bottom_degree, levelsize, idata);
-//
-//						 // add boundary subset
-//						 subset = ((*subsettable) + currsubset);
-//
-//						 subset->AttribId = currsubset;
-//						 subset->Enabled = (numwritten > 0);
-//						 subset->IndexCount = numwritten;
-//						 subset->IndexStart = indexoffset;
-//						 subset->PrimitiveType = GL_TRIANGLES;
-//						 subset->VertexCount = 0;
-//						 subset->VertexStart = 0;
-//
-//						 indexoffset += numwritten;
-//						 idata += numwritten;
-//
-//						 ++currsubset;
-//					 }
-//				 }
-//			 }
-//		 }
-//	 }
-//
-//	 //OpenGLAttributeRange& lastsubset = (*subsettable)[currsubset - 1];
-//	 //printf("Total indices: %lu (%lu restarts)\n", lastsubset.IndexStart + lastsubset.IndexCount, numrestarts);
-// }
 
 void Vec2Normalize(glm::vec2& out, glm::vec2& v)
 {
@@ -749,12 +534,12 @@ void Vec2Normalize(glm::vec2& out, glm::vec2& v)
 	out[1] = v[1] * il;
 }
 
-//ÇóÏòÁ¿³¤¶È£¬¿ÉÌæ»»¿â
+//æ±‚å‘é‡é•¿åº¦ï¼Œå¯æ›¿æ¢åº“
 float Vec2Length(const glm::vec2& v)
 {
 	return sqrtf(v.x * v.x + v.y * v.y);
 }
-//Çólog2xµÄÕûÊı
+//æ±‚log2xçš„æ•´æ•°
 uint32_t Log2OfPow2(uint32_t x)
 {
 	uint32_t ret = 0;

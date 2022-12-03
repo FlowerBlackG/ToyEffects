@@ -5,6 +5,7 @@
 #include <ToyEffects/scenes/Skybox/NahidaScene.h>
 #include <ToyEffects/scenes/Skybox/WaterScene.h>
 #include <ToyEffects/scenes/Skybox/shared.h>
+#include<iostream>
 
 static float lastX = 0;
 static float lastY = 0;

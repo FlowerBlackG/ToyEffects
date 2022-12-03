@@ -126,6 +126,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -138,7 +139,9 @@
     <Library Include="lib\lib\ToyGraph.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="components\scenes\Light.cpp" />
     <ClCompile Include="components\scenes\MainScene.cpp" />
+    <ClCompile Include="components\scenes\Material.cpp" />
     <ClCompile Include="components\scenes\Skybox\NahidaScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\shared.cpp" />
@@ -447,6 +450,8 @@
     <ClInclude Include="lib\include\ToyGraph\AppRuntime.h" />
     <ClInclude Include="lib\include\ToyGraph\Camera.h" />
     <ClInclude Include="lib\include\ToyGraph\Engine.h" />
+    <ClInclude Include="lib\include\ToyGraph\Light.h" />
+    <ClInclude Include="lib\include\ToyGraph\Material.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Mesh.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Model.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Texture.h" />
