@@ -13,7 +13,7 @@
 using namespace std;
 
 
-////数学常量
+////fft数学常量
 //static const float PI = 3.141592f;
 //static const float ONE_OVER_SQRT_2 = 0.7071067f;	//根号2分之1
 //static const float ONE_OVER_SQRT_TWO_PI = 0.39894228f;
@@ -30,7 +30,8 @@ using namespace std;
 //unsigned int				debugvao = 0;
 //unsigned int				helptext = 0;
 
-//unsigned int VAO;
+
+//改完fft再一并移入类
 Texture waterTexture;
 Material waterMaterial;
 Light mainLight;
@@ -118,6 +119,7 @@ void Texture::UseTexture()
 	glBindTexture(GL_TEXTURE_2D, id);
 }
 
+//实际没有用几何
 void Shader::read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryShaderFilePath)
 {
 	//cout << vertexShaderFilePath;
@@ -246,7 +248,6 @@ void Shader::read(const std::string& vertexShaderFilePath, const std::string& fr
 
 }
 
-//先在这里写，其实应该调用
 void WaterScene::cursorPosCallback(double xPos, double yPos) {
 	__nahidaPaimonSharedCursorPosCallback(xPos, yPos);
 }
@@ -417,7 +418,7 @@ void WaterScene::CreateStrip(int hVertices, int ​vVertices, float size)
 //时刻改变位置，这里不需要
 void WaterScene::tick(float deltaT) {
 
-	auto cube1 = this->actors[0];
+	//auto cube1 = this->actors[0];
 	//cube1->setYaw(cube1->getYaw() + deltaT * 20);
 }
 
@@ -450,12 +451,8 @@ WaterScene::WaterScene() {
 	pSkybox = new Skybox(skyboxFaces);
 
 	camera = SceneManager::getInstance().currentScene()->camera;
-	//if (pCamera == camera)
-	//	cout << "YES" << endl;
-	//auto& camera = *pCamera;
-	//Camera *pcamera = SceneManager::getInstance().currentScene()->camera;
-	//this->camera = new Camera;
-	camera->setPosition(glm::vec3(0.0f, 2.0f, 5.0f));
+	//改！
+	camera->setPosition(glm::vec3(0.0f, 0.0f, 2.0f));
 
 	int hVert = 32;
 	int vVert = 32;
@@ -464,7 +461,6 @@ WaterScene::WaterScene() {
 
 	Shader ocean;
 	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs","../shaders/ocean/ocean.geom");
-
 
 	shaderList.push_back(ocean);
 
@@ -475,8 +471,6 @@ WaterScene::WaterScene() {
 
 	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f,0.5, 0.5f, 0.5f, 1.0f);
 
-
-	//glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f);
 	projection = glm::perspective(
 		glm::radians(camera->getFov()),
 		1.0f * runtime.getWindowWidth() / runtime.getWindowHeight(),
@@ -489,8 +483,8 @@ WaterScene::WaterScene() {
 void WaterScene::RenderWater()
 {
 
-	glClearColor(0.15f, 0.15f, 0.15f, 0.15f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClearColor(0.15f, 0.15f, 0.15f, 0.15f);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//__nahidaPaimonSharedActiveKeyInputProcessor(window, deltaTime);
 
@@ -508,24 +502,19 @@ void WaterScene::RenderWater()
 
 	glm::mat4 model;
 
-	model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+	model = glm::translate(model, glm::vec3(3.0f, 0.0f, 6.0f));
 	model = glm::rotate(model, glm::radians(135.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.5f));
+	model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	waterTexture.UseTexture();
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();
 
-	/*model = glm::mat4();
-	model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-	model = glm::rotate(model, modelRotation * toRadians, glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	meshList[1]->RenderMesh();*/
 
 	glUseProgram(0);
 }
 
+//等用于fft
 void Vec2Normalize(glm::vec2& out, glm::vec2& v)
 {
 	float il = 1.0f / sqrtf(v.x * v.x + v.y * v.y);

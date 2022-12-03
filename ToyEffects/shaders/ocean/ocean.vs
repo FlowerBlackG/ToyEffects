@@ -16,7 +16,7 @@ uniform mat4 view;
 uniform float uvScroll;
 
 const float PI = 3.14159;
-const float amplitude = 0.05;
+const float amplitude = 0.09;
 
 float Height()
 {
@@ -35,7 +35,7 @@ void main()
 	
 	vec2 time = vec2(uvScroll, 0.0f);
 	
-	TexCoord = tex + time;
+	TexCoord = tex + time/2.0f;
 	
 	Normal = mat3(transpose(inverse(model))) * norm;
 	

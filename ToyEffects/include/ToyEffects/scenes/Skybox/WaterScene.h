@@ -10,6 +10,8 @@ class WaterScene : public Scene {
 public:
 	//变量
 	int cnt;		//暂定
+
+
 	//函数
     ~WaterScene();
 
