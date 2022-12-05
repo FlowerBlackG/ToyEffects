@@ -7,6 +7,7 @@
 #include <iostream>
 #include <random>
 #include <complex>
+
 //暂时
 #include <fstream>
 #include <sstream>
@@ -115,6 +116,7 @@ void Texture::LoadTexture()
 
 void Texture::UseTexture()
 {
+	//加
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, id);
 }
@@ -236,6 +238,7 @@ void Shader::read(const std::string& vertexShaderFilePath, const std::string& fr
 	uniformUvScroll = glGetUniformLocation(id, "uvScroll");
 
 
+
 	//glDeleteShader(vertexId);
 	//glDeleteShader(fragmentId);
 	//	glDeleteShader(geoId);
@@ -256,7 +259,6 @@ void WaterScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
 	__nahidaPaimonSharedActiveKeyInputProcessor(window, deltaTime);
 
 }
-
 
 WaterScene::~WaterScene() {
 	if (this->pSkybox) {
@@ -452,7 +454,7 @@ WaterScene::WaterScene() {
 
 	camera = SceneManager::getInstance().currentScene()->camera;
 	//改！
-	camera->setPosition(glm::vec3(0.0f, 0.0f, 2.0f));
+	camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	int hVert = 32;
 	int vVert = 32;
@@ -468,7 +470,9 @@ WaterScene::WaterScene() {
 	waterTexture.LoadTexture();
 
 	waterMaterial = Material(1.0f, 64);
-
+	//color:白
+	//漫反射参数0.7
+	//光源方向0.5*3
 	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f,0.5, 0.5f, 0.5f, 1.0f);
 
 	projection = glm::perspective(
@@ -492,7 +496,8 @@ void WaterScene::RenderWater()
 
 	Shader first = shaderList[0];
 	glUseProgram(first.getId());
-	glUniform1f(uniformUvScroll, glfwGetTime() / 2.5);
+	//水流速度
+	glUniform1f(uniformUvScroll, glfwGetTime() / 3.5);
 
 	mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
 
@@ -500,11 +505,18 @@ void WaterScene::RenderWater()
 	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
 	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 
-	glm::mat4 model;
+	cout << "camera:" << camera->getPosition().x << ' ' << camera->getPosition().y << ' ' << camera->getPosition().z << endl;
+	glm::mat4 model= glm::mat4(1.0);
+	//model;
 
-	model = glm::translate(model, glm::vec3(3.0f, 0.0f, 6.0f));
-	model = glm::rotate(model, glm::radians(135.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::translate(model, glm::vec3(10.0f, -6.0f, 7.0f));
+	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+
+	//glm::mat4 x= projection * camera->getViewMatrix() * model;
+	//cout << "x:" << glm::value_ptr(x) << endl;
+	//printf("Log:%s", glm::to_string(x).c_str());
+	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	waterTexture.UseTexture();
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);

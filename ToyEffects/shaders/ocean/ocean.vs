@@ -15,6 +15,7 @@ uniform mat4 view;
 
 uniform float uvScroll;
 
+
 const float PI = 3.14159;
 const float amplitude = 0.09;
 
@@ -27,9 +28,10 @@ float Height()
 
 void main()
 {
+
 	float height = Height();
 	gl_Position = projection * view * model * vec4(pos.x, pos.y, pos.z + height, 1.0);
-	
+
 	vCol = vec4(clamp(pos, 0.05f, 1.0f), 1.0f);
 	//vCol = vec4(0.7f, 0.7f, 0.7f, 1.0f);
 	

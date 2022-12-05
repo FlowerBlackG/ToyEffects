@@ -29,14 +29,14 @@ void main()
 {
 	float height = Height();
 	gl_Position = projection * view * model * vec4(pos.x, pos.y, pos.z + height, 1.0);
-	
+	//将position的值限定在0.05-1.0之间
 	vCol = vec4(clamp(pos, 0.05f, 1.0f), 1.0f);
 	//vCol = vec4(0.7f, 0.7f, 0.7f, 1.0f);
 	
 	vec2 time = vec2(uvScroll, 0.0f);
 	
 	TexCoord = tex + time;
-	
+	//转换顶点着色器里的法线向量。
 	Normal = mat3(transpose(inverse(model))) * norm;
 	
 	FragPos = (model * vec4(pos, 1.0)).xyz;
