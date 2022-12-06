@@ -51,6 +51,13 @@ public:
   // glm::mat4 LFMVPM;
     int check;
 
+
+    Model* paimonModel = nullptr;
+    Shader paimonShader{
+        "shaders/shader.vert",
+        "shaders/shader.frag"
+    };
+
 };
 
 

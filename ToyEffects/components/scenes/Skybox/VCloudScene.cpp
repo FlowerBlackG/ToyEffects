@@ -38,7 +38,8 @@ VCloudScene::~VCloudScene() {
 }
 
 void VCloudScene::tick(float deltaT) {
-
+    //cout <<setw(5)<< 1/deltaT<<" fps\r";
+    printf("%5.2f fps\r", 1/deltaT);
 }
 
 
@@ -56,41 +57,46 @@ void VCloudScene::render() {
         0.1f,
         100.0f
     );
-    glBindFramebuffer(GL_FRAMEBUFFER, subbuffer);
-    glViewport(0, 0, WIDTH / downscale, HEIGHT / downscale);
+    //glBindFramebuffer(GL_FRAMEBUFFER, subbuffer);
+    //glViewport(0, 0, WIDTH / downscale, HEIGHT / downscale);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    //draw screen
+
+    paimonShader.use();
+    paimonShader.setMatrix4fv("projection", projection)
+        .setMatrix4fv("view", view);
+    for (auto it : this->actors) { // 实际只有一个 actor，即派蒙。
+
+        paimonShader.setMatrix4fv("model", it.second->getModelMatrix());
+        it.second->render(&paimonShader);
+    }
 
     skyShader.use();
 
 
-    //glUniform1f(timeu, timePassed);
     GLfloat timePassed= glfwGetTime();
     skyShader.setFloat("time", timePassed);
-    //glUniformMatrix4fv(uniformMatrix, 1, GL_FALSE, glm::value_ptr(MVPM));
 
     skyShader.setMatrix4fv("MVPM", projection * view);
-    //glUniform1f(aspectUniform, ASPECT);
     GLfloat ASPECT = float(WIDTH) / float(HEIGHT);
     skyShader.setFloat("aspect", ASPECT);
-
-    //glUniform1i(checku, (check)%(downscalesq));
+    skyShader.setVector3f("cameraPos", camera->getPosition());
     skyShader.setInt("check", (check) % (downscalesq));
-    //glUniform2f(resolutionu, GLfloat(WIDTH), GLfloat(HEIGHT));
     skyShader.setVector2f("resolution", WIDTH, HEIGHT);
-    //glUniform1f(downscaleu, GLfloat(downscale));
     skyShader.setFloat("downscale", downscale);
 
-    //glUniform1i(perlworluniform, 0);
     skyShader.setInt("perlworl", 0);
-    //glUniform1i(worluniform, 1);
     skyShader.setInt("worl", 1);
-    //glUniform1i(curluniform, 2);
     skyShader.setInt("curl", 2);
-    //glUniform1i(weatheruniform, 3);
     skyShader.setInt("weather", 3);
 
     //variables for preetham model
     const float PI = 3.141592653589793238462643383279502884197169;
-    float theta = PI * (-0.23 + 0.25 * sin(timePassed * 0.1));
+    float time_fixed = 1;
+    float theta = PI * (-0.23 + 0.25 * sin(time_fixed * 0.1));
     float phi = 2 * PI * (-0.25);
     float sunposx = cos(phi);
     float sunposy = sin(phi) * sin(theta);
@@ -98,7 +104,7 @@ void VCloudScene::render() {
 
     //glUniform3f(psunPosition, GLfloat(sunposx), GLfloat(sunposy), GLfloat(sunposz));
     skyShader.setVector3f("sunPosition", sunposx, sunposy, sunposz);
-
+    
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, perlworltex);
@@ -114,40 +120,15 @@ void VCloudScene::render() {
     glBindVertexArray(0);
 
 
+  /*  glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
     //upscale the buffer into full size framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 
-    glViewport(0, 0, WIDTH, HEIGHT);//???
-    //glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    //upscaleShader.use();
-    ////glUniformMatrix4fv(upLFuniformMatrix, 1, GL_FALSE, glm::value_ptr(LFMVPM));
-    //upscaleShader.setMat4("LFMVPM", LFMVPM);
-    ////glUniformMatrix4fv(upuniformMatrix, 1, GL_FALSE, glm::value_ptr(MVPM));
-    //upscaleShader.setMat4("MVPM", MVPM);
-    ///*glUniform1i(upcheck, (check)%downscalesq);
-    //glUniform2f(upresolution, GLfloat(WIDTH), GLfloat(HEIGHT));
-    //glUniform1f(updownscale, GLfloat(downscale));
-    //glUniform1f(upaspect, ASPECT);*/
-
-    //upscaleShader.setInt("check", (check) % (downscalesq));//这个是什么？
-    //upscaleShader.setVec2("resolution", WIDTH, HEIGHT);
-    //upscaleShader.setFloat("downscale", downscale);
-    //upscaleShader.setFloat("aspect", ASPECT);
-
-    ///*upscaleShader.setInt("perlworl", 0);
-    //upscaleShader.setInt("worl", 1);
-    //upscaleShader.setInt("curl", 2);
-    //upscaleShader.setInt("weather", 3);*/
-
-    ////glUniform1i(buffuniform, 0);
-    ////upscaleShader.setFloat("buff",0);
-    //upscaleShader.setInt("buff",0);
-    ////glUniform1i(ponguniform, 1);
-    ////upscaleShader.setFloat("pong", 0);
-    //upscaleShader.setInt("pong", 1);
-
+    glViewport(0, 0, WIDTH, HEIGHT);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, subbuffertex);
     glActiveTexture(GL_TEXTURE1);
@@ -160,9 +141,9 @@ void VCloudScene::render() {
 
     //copy the full size buffer so it can be read from next frame
     glBindFramebuffer(GL_FRAMEBUFFER, copyfbo);
-
+    glDisable(GL_DEPTH_TEST);
     postShader.use();
-
+    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbotex);
 
@@ -184,7 +165,7 @@ void VCloudScene::render() {
     glBindVertexArray(0);
 
     check++;
-
+    */
 
 }
 
@@ -315,6 +296,18 @@ VCloudScene::VCloudScene() {
     stbi_image_free(perlWorlNoiseArray);
 
     check = 0;
+
+     // 准备派蒙。
+    Actor* paimon = new Actor;
+    paimon->setScale(glm::vec3(0.2));
+    this->addActor(paimon);
+
+    paimonModel = new Model("assets/genshin-impact/paimon/paimon.pmx");
+    paimon->bindModel(paimonModel);
+
+    if (paimonShader.errcode != ShaderError::SHADER_OK) {
+        cout << "paimon shader err: " << paimonShader.errmsg << endl;
+    }
 }
 
 
