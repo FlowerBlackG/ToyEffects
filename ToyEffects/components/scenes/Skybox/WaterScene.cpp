@@ -14,6 +14,7 @@
 using namespace std;
 
 
+
 ////fft数学常量
 //static const float PI = 3.141592f;
 //static const float ONE_OVER_SQRT_2 = 0.7071067f;	//根号2分之1
@@ -47,6 +48,28 @@ void Vec2Normalize(glm::vec2& out, glm::vec2& v);
 float Vec2Length(const glm::vec2& v);
 //求log2x的整数
 uint32_t Log2OfPow2(uint32_t x);
+
+GLenum glCheckError_(const char* file, int line)
+{
+	GLenum errorCode;
+	while ((errorCode = glGetError()) != GL_NO_ERROR)
+	{
+		std::string error;
+		switch (errorCode)
+		{
+		case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+		case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+		case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+		case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
+		case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
+		case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+		}
+		std::cout << error << " | " << file << " (" << line << ")" << std::endl;
+	}
+	return errorCode;
+}
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int numOfVertices, unsigned int numOfIndices)
 {
@@ -106,8 +129,15 @@ void Texture::LoadTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	//使用png贴图
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+	//使用jpg贴图
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
+	
 	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glCheckError();
+	//std::cout << glGetError() << std::endl; // 返回 0 (无错误)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -456,8 +486,9 @@ WaterScene::WaterScene() {
 	//改！
 	camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 
-	int hVert = 32;
-	int vVert = 32;
+
+	int hVert = 50;
+	int vVert = 50;
 
 	CreateStrip(hVert, vVert, 0.5f);
 
@@ -466,14 +497,16 @@ WaterScene::WaterScene() {
 
 	shaderList.push_back(ocean);
 
-	waterTexture .setfileLocation((char*)("textures/water.png"));
+	waterTexture.setfileLocation((char*)("textures/water.png"));
+	//waterTexture .setfileLocation((char*)("textures/ocean2.jpg"));
 	waterTexture.LoadTexture();
 
 	waterMaterial = Material(1.0f, 64);
 	//color:白
 	//漫反射参数0.7
 	//光源方向0.5*3
-	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f,0.5, 0.5f, 0.5f, 1.0f);
+	//mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, 0.5, 0.5f, 0.5f, 1.0f);
+	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f,-5.5f, -0.5f, -0.5f, 1.0f);
 
 	projection = glm::perspective(
 		glm::radians(camera->getFov()),
@@ -497,7 +530,7 @@ void WaterScene::RenderWater()
 	Shader first = shaderList[0];
 	glUseProgram(first.getId());
 	//水流速度
-	glUniform1f(uniformUvScroll, glfwGetTime() / 3.5);
+	glUniform1f(uniformUvScroll, glfwGetTime() / 2.0);
 
 	mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
 
@@ -505,23 +538,29 @@ void WaterScene::RenderWater()
 	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
 	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 
-	cout << "camera:" << camera->getPosition().x << ' ' << camera->getPosition().y << ' ' << camera->getPosition().z << endl;
+	//cout << "camera:" << camera->getPosition().x << ' ' << camera->getPosition().y << ' ' << camera->getPosition().z << endl;
 	glm::mat4 model= glm::mat4(1.0);
-	//model;
 
-	model = glm::translate(model, glm::vec3(10.0f, -6.0f, 7.0f));
+	model = glm::translate(model, glm::vec3(10.0f, -10.0f, 7.0f));
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
-	//glm::mat4 x= projection * camera->getViewMatrix() * model;
-	//cout << "x:" << glm::value_ptr(x) << endl;
-	//printf("Log:%s", glm::to_string(x).c_str());
 	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	waterTexture.UseTexture();
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();
 
+	
+	//model = glm::mat4(1.0);
+	//model = glm::translate(model, glm::vec3(26.0f, -10.0f, 7.0f));
+	//model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	//model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	//glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	//waterTexture.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
 
 	glUseProgram(0);
 }

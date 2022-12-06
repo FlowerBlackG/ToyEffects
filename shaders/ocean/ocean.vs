@@ -15,28 +15,36 @@ uniform mat4 view;
 
 uniform float uvScroll;
 
+
 const float PI = 3.14159;
-const float amplitude = 0.05;
+const float amplitude = 0.05 ;
+//const float amplitude = 0.03;
 
 float Height()
 {
-	float component1 = sin(2.0 * PI * uvScroll + (pos.x * 16.0)) * amplitude;
-	float component2 = sin(2.0 * PI * uvScroll + (pos.y * pos.x * 8.0)) * amplitude;
-	return component1 + component2;
+	//float component1 = sin(2.0 * PI * uvScroll + (pos.x * 16.0)) * amplitude;
+	//float component2 = sin(2.0 * PI * uvScroll + (pos.y * pos.x * 8.0)) * amplitude;
+	//return component1 + component2;
+	float speeded=uvScroll*1.5;
+	float component1 = sin( 2.0 * PI *speeded  -2*0.707*pos.x-0.707*pos.y) * amplitude;
+	float component2 = sin(2.0 * PI *speeded -2*pos.x) * amplitude;
+	float component3 = sin(2.0 * PI *speeded -2*pos.y) * amplitude;
+	return component1 + component2+component3;
 }
 
 void main()
 {
+
 	float height = Height();
 	gl_Position = projection * view * model * vec4(pos.x, pos.y, pos.z + height, 1.0);
-	//将position的值限定在0.05-1.0之间
+
 	vCol = vec4(clamp(pos, 0.05f, 1.0f), 1.0f);
 	//vCol = vec4(0.7f, 0.7f, 0.7f, 1.0f);
 	
 	vec2 time = vec2(uvScroll, 0.0f);
 	
-	TexCoord = tex + time;
-	//转换顶点着色器里的法线向量。
+	TexCoord = tex + time/2.0f;
+	
 	Normal = mat3(transpose(inverse(model))) * norm;
 	
 	FragPos = (model * vec4(pos, 1.0)).xyz;
