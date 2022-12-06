@@ -18,6 +18,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
+
 enum class ShaderError {
     UNINITIALIZED,
     SHADER_OK,
@@ -35,6 +37,7 @@ enum class ShaderError {
 class Shader {
 public:
 
+
     Shader() {};
 
     /**
@@ -44,6 +47,7 @@ public:
      * @param fragmentShaderFilePath fragment shader 文件路径。
      */
     Shader(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath);
+    void read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryLocation);
 
     
     Shader& resetErrCodeAndErrMsg();
@@ -126,4 +130,10 @@ protected:
      * shader 程序id。
      */
     GLuint id = 0;
+
+    //GLuint shaderID, uniformProjection, uniformModel, uniformView, uniformEyePosition,
+    //uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection,
+    //uniformSpecularIntensity, uniformShininess,
+    //uniformUvScroll;
+
 };

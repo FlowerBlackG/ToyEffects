@@ -1,34 +1,18 @@
-
+ï»¿
 #pragma once
 
 #include <ToyGraph/Scene/Scene.h>
 #include <ToyGraph/Skybox.h>
 #include <ToyGraph/Camera.h>
 #include <ToyGraph/Actor.h>
-//#include <ToyEffects/scenes/Skybox/gl4ext.h>
-//#include <ToyEffects/scenes/Skybox/terrainquadtree.h>
-
-//OpenGLMesh* oceanmesh = nullptr;
-//
-//OpenGLEffect* debugeffect = nullptr;
-//OpenGLEffect* updatespectrum = nullptr;
-//OpenGLEffect* fourier_dft = nullptr;	// bruteforce solution
-//OpenGLEffect* fourier_fft = nullptr;	// fast fourier transform
-//OpenGLEffect* createdisp = nullptr;	// displacement
-//OpenGLEffect* creategrad = nullptr;	// normal & jacobian
-//OpenGLEffect* oceaneffect = nullptr;
-//OpenGLEffect* wireeffect = nullptr;
-//OpenGLEffect* skyeffect = nullptr;
-//
-//OpenGLScreenQuad* screenquad = nullptr;
-//
-//TerrainQuadTree		tree;
 
 class WaterScene : public Scene {
 public:
-	//±äÁ¿
-	int cnt;		//Ôİ¶¨
-	//º¯Êı
+	//å˜é‡
+	int cnt;		//æš‚å®š
+
+
+	//å‡½æ•°
     ~WaterScene();
 
     static WaterScene* constructor() {
@@ -50,14 +34,21 @@ public:
 	unsigned int GenerateBoundaryMesh(int deg_left, int deg_top, int deg_right, int deg_bottom, int levelsize, uint32_t* idata);
     float Phillips(const glm::vec2& k, const glm::vec2& w, float V, float A);
 
-
+    void RenderWater(); 
+    void CreateStrip(int hVertices, int â€‹vVertices, float size);
+    void calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
+        unsigned int vLength, unsigned int normalOffset, int hVertices);
     Skybox* pSkybox = nullptr;
 
-    //»­¸öcube
+    //ç”»ä¸ªcube
     Shader cube{
         "shaders/cube.vs",
         "shaders/cube.fs"
     };
 
+    std::vector<Mesh*> meshList;
+    std::vector<Shader> shaderList;
+
+    glm::mat4 projection;
 };
 

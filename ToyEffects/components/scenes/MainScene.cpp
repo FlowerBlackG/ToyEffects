@@ -16,42 +16,44 @@ static float lastY = 0;
 static bool firstMouse = true;
 
 void MainScene::cursorPosCallback(double xPos, double yPos) {
-    if (firstMouse) {
-        lastX = xPos;
-        lastY = yPos;
-        firstMouse = false;
-    }
+	if (firstMouse) {
+		lastX = xPos;
+		lastY = yPos;
+		firstMouse = false;
+	}
 
-    auto pCamera = SceneManager::getInstance().currentScene()->camera;
-    auto& camera = *pCamera;
-    
+	auto pCamera = SceneManager::getInstance().currentScene()->camera;
+	auto& camera = *pCamera;
 
-    float xOff = xPos - lastX;
-    float yOff = lastY - yPos; // reversed: y ranges bottom to top.
-    lastX = xPos;
-    lastY = yPos;
 
-    const float sensitivity = 0.1f;
-    xOff *= sensitivity;
-    yOff *= sensitivity;
+	float xOff = xPos - lastX;
+	float yOff = lastY - yPos; // reversed: y ranges bottom to top.
+	lastX = xPos;
+	lastY = yPos;
 
-    float pitch = camera.getPitch();
-    float yaw = camera.getYaw();
+	const float sensitivity = 0.1f;
+	xOff *= sensitivity;
+	yOff *= sensitivity;
 
-    pitch += yOff;
-    yaw += xOff;
+	float pitch = camera.getPitch();
+	float yaw = camera.getYaw();
 
-    if (pitch > 89.0f) {
-        pitch = 89.0f;
-    } else if (pitch < -89.0f) {
-        pitch = -89.0f;
-    }
+	pitch += yOff;
+	yaw += xOff;
 
-    camera.setPitch(pitch);
-    camera.setYaw(yaw);
+	if (pitch > 89.0f) {
+		pitch = 89.0f;
+	}
+	else if (pitch < -89.0f) {
+		pitch = -89.0f;
+	}
+
+	camera.setPitch(pitch);
+	camera.setYaw(yaw);
 }
 
 void MainScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
+
 
     auto pCamera = SceneManager::getInstance().currentScene()->camera;
     auto& camera = *pCamera;
@@ -117,30 +119,29 @@ void MainScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
         SceneManager::getInstance().navigateBack(); 
     }
 
-    
 }
 
 MainScene::~MainScene() {
-    if (this->pSkybox) {
-        delete this->pSkybox;
-    }
+	if (this->pSkybox) {
+		delete this->pSkybox;
+	}
 }
 
 void MainScene::render() {
-    pSkybox->render();
+	pSkybox->render();
 }
 
 MainScene::MainScene() {
-    vector<string> skyboxFaces({
-        "assets/SpaceboxCollection/Spacebox1/_left.png",
-        "assets/SpaceboxCollection/Spacebox1/_right.png",
-        "assets/SpaceboxCollection/Spacebox1/_top.png",
-        "assets/SpaceboxCollection/Spacebox1/_bottom.png",
-        "assets/SpaceboxCollection/Spacebox1/_front.png",
-        "assets/SpaceboxCollection/Spacebox1/_back.png"
-    });
+	vector<string> skyboxFaces({
+		"assets/SpaceboxCollection/Spacebox1/_left.png",
+		"assets/SpaceboxCollection/Spacebox1/_right.png",
+		"assets/SpaceboxCollection/Spacebox1/_top.png",
+		"assets/SpaceboxCollection/Spacebox1/_bottom.png",
+		"assets/SpaceboxCollection/Spacebox1/_front.png",
+		"assets/SpaceboxCollection/Spacebox1/_back.png"
+		});
 
-    pSkybox = new Skybox(skyboxFaces);
-    this->camera = new Camera;
+	pSkybox = new Skybox(skyboxFaces);
+	this->camera = new Camera;
 
 }
