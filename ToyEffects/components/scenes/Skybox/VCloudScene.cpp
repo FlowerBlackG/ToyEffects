@@ -1,11 +1,30 @@
 #include <iostream>
 #include <ToyEffects/scenes/Skybox/VCloudScene.h>
 #include <ToyEffects/scenes/Skybox/shared.h>
-
+#include "../imgui/imgui.h"
+#include "../imgui/imgui.h"
+#include "../imgui/imgui_impl_glfw.h"
+#include "../imgui/imgui_impl_opengl3.h"
 #include <stb_image.h>
 
 using namespace std;
 
+//void setGUI()
+//{
+//    float h;
+//    ImGui::Begin("Water controls");
+//    ImGui::SliderFloat("Water height", &h, 0.0f, 1000.f);
+//    ImGui::End();
+//}
+//void createGUI(GLFWwindow* window)
+//{
+//    // GUI
+//    ImGui::CreateContext();
+//    ImGui::StyleColorsDark();
+//
+//    ImGui_ImplGlfw_InitForOpenGL(window, true);
+//    ImGui_ImplOpenGL3_Init("#version 130");
+//}
 
 void VCloudScene::cursorPosCallback(double xPos, double yPos) {
     __nahidaPaimonSharedCursorPosCallback(xPos, yPos);
@@ -24,12 +43,7 @@ VCloudScene::~VCloudScene() {
     }
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &fbo);
-    glDeleteBuffers(1, &copyfbo);
-    glDeleteBuffers(1, &subbuffer);
-    glDeleteTextures(1, &fbotex);
-    glDeleteTextures(1, &copyfbotex);
-    glDeleteTextures(1, &subbuffertex);
+
     glDeleteTextures(1, &perlworltex);
     glDeleteTextures(1, &worltex);
     glDeleteTextures(1, &curltex);
@@ -57,25 +71,24 @@ void VCloudScene::render() {
         0.1f,
         100.0f
     );
-    //glBindFramebuffer(GL_FRAMEBUFFER, subbuffer);
-    //glViewport(0, 0, WIDTH / downscale, HEIGHT / downscale);
 
+   //云层厚度减到50%，光线步进的步长增大两倍，采样深度除以2——平视时fps大概在20左右，仰视100+
+   //删去3了个不必要的framebuffer，速度提升了4-5倍，fps在100-800不等
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     //draw screen
-
     paimonShader.use();
     paimonShader.setMatrix4fv("projection", projection)
         .setMatrix4fv("view", view);
-    for (auto it : this->actors) { // 实际只有一个 actor，即派蒙。
+    for (auto it : this->actors) { 
 
         paimonShader.setMatrix4fv("model", it.second->getModelMatrix());
         it.second->render(&paimonShader);
     }
 
     skyShader.use();
-
 
     GLfloat timePassed= glfwGetTime();
     skyShader.setFloat("time", timePassed);
@@ -84,17 +97,17 @@ void VCloudScene::render() {
     GLfloat ASPECT = float(WIDTH) / float(HEIGHT);
     skyShader.setFloat("aspect", ASPECT);
     skyShader.setVector3f("cameraPos", camera->getPosition());
-    skyShader.setInt("check", (check) % (downscalesq));
+    skyShader.setInt("check", 0);//已废除
     skyShader.setVector2f("resolution", WIDTH, HEIGHT);
     skyShader.setFloat("downscale", downscale);
-
+    skyShader.setFloat("cloud_density", cloud_density);
     skyShader.setInt("perlworl", 0);
     skyShader.setInt("worl", 1);
     skyShader.setInt("curl", 2);
     skyShader.setInt("weather", 3);
 
     //variables for preetham model
-    const float PI = 3.141592653589793238462643383279502884197169;
+    const float PI = 3.141;
     float time_fixed = 1;
     float theta = PI * (-0.23 + 0.25 * sin(time_fixed * 0.1));
     float phi = 2 * PI * (-0.25);
@@ -118,55 +131,7 @@ void VCloudScene::render() {
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
-
-
-  /*  glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    //upscale the buffer into full size framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-
-    glViewport(0, 0, WIDTH, HEIGHT);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, subbuffertex);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, copyfbotex);
-
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindVertexArray(0);
-
-
-    //copy the full size buffer so it can be read from next frame
-    glBindFramebuffer(GL_FRAMEBUFFER, copyfbo);
-    glDisable(GL_DEPTH_TEST);
-    postShader.use();
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fbotex);
-
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindVertexArray(0);
-
-
-    //copy to the screen
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    postShader.use();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fbotex);
-
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindVertexArray(0);
-
-    check++;
-    */
-
+   
 }
 
 
@@ -206,56 +171,13 @@ VCloudScene::VCloudScene() {
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
-    //our main full size framebuffer
-    glGenFramebuffers(1, &fbo);
-    glGenTextures(1, &fbotex);
-    glBindTexture(GL_TEXTURE_2D, fbotex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, app.getWindowWidth(), app.getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbotex, 0);
-
-    //our secondary full size framebuffer for copying and reading from the main framebuffer
-
-
-    glGenFramebuffers(1, &copyfbo);
-    glGenTextures(1, &copyfbotex);
-    glBindTexture(GL_TEXTURE_2D, copyfbotex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, app.getWindowWidth(), app.getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, copyfbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, copyfbotex, 0);
-
-
-    //our downscaled buffer that we actually render to
-
-    glGenFramebuffers(1, &subbuffer);
-    glGenTextures(1, &subbuffertex);
-    glBindTexture(GL_TEXTURE_2D, subbuffertex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, app.getWindowWidth() / downscale, app.getWindowHeight() / downscale, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, subbuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, subbuffertex, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
     //setup noise textures
 
     int x, y, n;
     unsigned char* curlNoiseArray = stbi_load("assets/VolumeCloud/curlNoise_1.png", &x, &y, &n, 0);
-
+    //curl噪声
     glGenTextures(1, &curltex);
     glBindTexture(GL_TEXTURE_2D, curltex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 128, 128, 0, GL_RGB, GL_UNSIGNED_BYTE, curlNoiseArray);
@@ -265,7 +187,7 @@ VCloudScene::VCloudScene() {
     stbi_image_free(curlNoiseArray);
 
     unsigned char* weatherNoiseArray = stbi_load("assets/VolumeCloud/weather.bmp", &x, &y, &n, 0);
-
+    
     glGenTextures(1, &weathertex);
     glBindTexture(GL_TEXTURE_2D, weathertex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, weatherNoiseArray);
@@ -273,7 +195,7 @@ VCloudScene::VCloudScene() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(weatherNoiseArray);
-
+ 
     unsigned char* worlNoiseArray = stbi_load("assets/VolumeCloud/worlnoise.bmp", &x, &y, &n, 0);
     glGenTextures(1, &worltex);
     glBindTexture(GL_TEXTURE_3D, worltex);
@@ -285,7 +207,7 @@ VCloudScene::VCloudScene() {
     stbi_image_free(worlNoiseArray);
 
     unsigned char* perlWorlNoiseArray = stbi_load("assets/VolumeCloud/perlworlnoise.tga", &x, &y, &n, 4);
-
+ 
     glGenTextures(1, &perlworltex);
     glBindTexture(GL_TEXTURE_3D, perlworltex);
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 128, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, perlWorlNoiseArray);
@@ -295,7 +217,6 @@ VCloudScene::VCloudScene() {
     glBindTexture(GL_TEXTURE_3D, 0);
     stbi_image_free(perlWorlNoiseArray);
 
-    check = 0;
 
      // 准备派蒙。
     Actor* paimon = new Actor;
@@ -308,8 +229,5 @@ VCloudScene::VCloudScene() {
     if (paimonShader.errcode != ShaderError::SHADER_OK) {
         cout << "paimon shader err: " << paimonShader.errmsg << endl;
     }
+  //  createGUI(app.getWindow());
 }
-
-
-
-

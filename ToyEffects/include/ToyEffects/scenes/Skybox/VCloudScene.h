@@ -8,11 +8,6 @@ class VCloudScene : public Scene {
 public:
     GLuint VBO, VAO;
     //our main full size framebuffer
-    GLuint fbo, fbotex;
-    //our secondary full size framebuffer for copying and reading from the main framebuffer
-    GLuint copyfbo, copyfbotex;
-    //our downscaled buffer that we actually render to
-    GLuint subbuffer, subbuffertex;//may be useless
 
     //setup noise textures
     GLuint curltex, worltex, perlworltex, weathertex;
@@ -57,7 +52,7 @@ public:
         "shaders/shader.vert",
         "shaders/shader.frag"
     };
-
+    GLfloat cloud_density=0.5;
 };
 
 

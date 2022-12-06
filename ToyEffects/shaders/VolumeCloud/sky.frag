@@ -1,12 +1,6 @@
 #version 330 core
-//TODO update cloud shaping
-//TODO fix up weather texture
-//TODO add more flexibility to parameters
-	// rain/coverage
-	// earth radius
-	// sky color //maybe LUT // or just vec3 for coefficients
-//TODO add 2d cloud layer on top
-
+//相机移动太远会出问题
+//add sky box
 uniform sampler3D perlworl;
 uniform sampler3D worl;
 uniform sampler2D curl;
@@ -21,14 +15,14 @@ uniform float downscale;
 //总体云层密度
 uniform float cloud_density;
 uniform vec3 cameraPos ;
-//preetham variables
+
 in vec3 vSunDirection;
 
 in vec3 vSunColor;
 
 out vec4 color;
 
-//I like the look of the small sky, but could be tweaked however
+
 const float g_radius = 200000.0; //ground radius
 const float sky_b_radius = 201000.0;//bottom of cloud layer
 const float sky_t_radius = 201500.0;//top of cloud layer
@@ -59,7 +53,7 @@ const vec3 RANDOM_VECTORS[6] = vec3[6]
 	vec3(-0.16852403f,  0.14748697f,  0.97460106f)
 	);
 
-// fractional value for sample position in the cloud layer
+//点在云层中的位置 fractional value for sample position in the cloud layer
 float GetHeightFractionForPoint(float inPosition)
 { // get global fractional position in cloud zone
 	float height_fraction = (inPosition -  sky_b_radius) / (sky_t_radius - sky_b_radius); 
@@ -103,7 +97,7 @@ float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
 	float height_fraction = GetHeightFractionForPoint(length(p));
 	vec4 n = textureLod(perlworl, p*0.0003, LOD);
 	float fbm = n.g*0.625+n.b*0.25+n.a*0.125;
-	float g = densityHeightGradient(height_fraction, 0.5);
+	float g = densityHeightGradient(height_fraction, cloud_density);
 	float base_cloud = remap(n.r, -(1.0-fbm), 1.0, 0.0, 1.0);
 	float cloud_coverage = smoothstep(0.6, 1.3, weather.x);
 	base_cloud = remap(base_cloud*g, 1.0-cloud_coverage, 1.0, 0.0, 1.0); 
@@ -119,7 +113,7 @@ float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
 	return clamp(base_cloud, 0.0, 1.0);
 }
 
-#define Ambient  vec3(1.4,1.25,1.29)    // 基础散射
+#define Ambient  vec3(.7,.7,.7)    // 基础散射
 
 vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	float T = 1.0;
@@ -147,7 +141,7 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 		float lt = 1.0;
 		float ncd = 0.0;
 		float cd = 0.0;
-		if (t>0.0) { //calculate lighting, but only when we are in a non-zero density point
+		if (t>0.0) { //密度不为0时才计算光照
 			for (int j=0;j<6;j++) {
 				lp += (ldir+(RANDOM_VECTORS[j]*float(j+1))*lss);
 				vec3 lweather = texture(weather, lp.xz*weather_scale).xyz;
@@ -157,37 +151,39 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 			}
 			lp += ldir*12.0;
 			vec3 lweather = texture(weather, lp.xz*weather_scale).xyz;
-			lt = density(lp, lweather, false, 5.0);
+			lt = density(lp, lweather, false, 5.0);//LOD?
 			cd += lt;
 			ncd += (lt * (1.0-(cd*(1.0/(lss*18.0)))));
 
 		float beers = max(exp(-ld*ncd*lss), exp(-ld*0.25*ncd*lss)*0.7);
 		float powshug = 1.0-exp(-ld*ncd*lss*2.0);
 
-		vec3 ambient = 5.0*Ambient*mix(0.15, 1.0, height_fraction);
+		vec3 ambient = 4.0*Ambient*mix(0.15, 1.0, height_fraction);
 		vec3 sunC = pow(vSunColor, vec3(0.75));
 		L += (ambient+sunC*beers*powshug*2.0)*(t)*T*ss;	
-	
+		
 		alpha += (1.0-dt)*(1.0-alpha);
 		}
+		
 	}
+	L = max(L,vec3(0.4,0.4,0.4)) * vec3(0.8,0.5,0.8);
 	return vec4(L, alpha);
 }
 void main()
 {
 	vec2 shift = vec2(floor(float(check)/downscale), mod(float(check), downscale));	
-	//shift = vec2(0.0);
+	
 	vec2 uv = (gl_FragCoord.xy*downscale+shift.yx)/(resolution);
 	uv = uv-vec2(0.5);
 	uv *= 2.0;
 	uv.x *= aspect;
 	vec4 uvdir = (vec4(uv.xy, 1.0, 1.0));
 	vec4 worldPos = (inverse((MVPM))*uvdir);
-	vec3 dir = normalize(worldPos.xyz/worldPos.w);
-
+	//vec3 dir = normalize(worldPos.xyz/worldPos.w);
+	vec3 dir = normalize(worldPos.xyz/worldPos.w-cameraPos);
 	vec4 col = vec4(0.0);
 	if (dir.y>0.0) {
-
+	
 		vec3 camPos = cameraPos+vec3(0.0, g_radius, 0.0);
 		vec3 start = camPos+dir*intersectSphere(camPos, dir, sky_b_radius);//计算云层底部向量
 		vec3 end =min( camPos+dir*intersectSphere(camPos, dir, sky_t_radius),start+dir*500);//计算云层顶部向量
@@ -204,7 +200,7 @@ void main()
 		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//云量控制在一定的范围
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);
-		vec3 background = vec3(0.2,0.5,0.6);
+		vec3 background = vec3(0.4,0.5,0.6);
 		//mix bgcolor
 		col = vec4(background*(1.0-volume.a)+volume.xyz*volume.a, 1.0);
 		if (volume.a>1.0) {
@@ -215,4 +211,3 @@ void main()
 	}
 	color = col;
 }
-

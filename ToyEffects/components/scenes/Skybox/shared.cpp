@@ -60,6 +60,7 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
     float cameraSpeed = 2.5f * deltaTime;
     
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        
         camera.move(cameraSpeed, camera.getDirectionVectorFront());
     } 
 
