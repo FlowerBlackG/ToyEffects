@@ -86,7 +86,7 @@ WaterMesh::WaterMesh()
 	indexCount = 0;
 }
 
-void WaterMesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int numOfVertices, unsigned int numOfIndices)
+void WaterMesh::CreateMesh(GLfloat* water_vertices, unsigned int* indices, unsigned int numOfVertices, unsigned int numOfIndices)
 {
 	indexCount = numOfIndices;
 
@@ -99,13 +99,13 @@ void WaterMesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned in
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(indices[0]) * numOfVertices, vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(indices[0]) * numOfVertices, water_vertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(water_vertices[0]) * 8, 0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 3));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(water_vertices[0]) * 8, (void*)(sizeof(water_vertices[0]) * 3));
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 5));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(water_vertices[0]) * 8, (void*)(sizeof(water_vertices[0]) * 5));
 	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -312,10 +312,12 @@ void WaterShader::useWater()
 {
 	glUseProgram(id);
 }
+
 GLuint WaterShader::getId()
 {
 	return id;
 }
+
 void WaterScene::cursorPosCallback(double xPos, double yPos) {
 	__nahidaPaimonSharedCursorPosCallback(xPos, yPos);
 }
@@ -325,18 +327,180 @@ void WaterScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
 
 }
 
+void WaterScene::bindCloudShader()
+{
+	//init a square
+	GLfloat vertices[] = {
+			 -1.0f, -1.0f,
+	   -1.0f,  3.0f,
+		3.0f, -1.0f,
+	};
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+}
+
+void WaterScene::initCloud()
+{
+	if (skyShader.errcode != ShaderError::SHADER_OK) {
+		cout << "VCloud:sky shader err: " << skyShader.errmsg << endl;
+	}
+
+	if (postShader.errcode != ShaderError::SHADER_OK) {
+		cout << "VCloud:post shader err: " << postShader.errmsg << endl;
+	}
+
+	int x, y, n;
+	unsigned char* curlNoiseArray = stbi_load("assets/VolumeCloud/curlNoise_1.png", &x, &y, &n, 0);
+	//curl噪声
+	glGenTextures(1, &curltex);
+	glBindTexture(GL_TEXTURE_2D, curltex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 128, 128, 0, GL_RGB, GL_UNSIGNED_BYTE, curlNoiseArray);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(curlNoiseArray);
+
+	unsigned char* weatherNoiseArray = stbi_load("assets/VolumeCloud/weather.bmp", &x, &y, &n, 0);
+
+	glGenTextures(1, &weathertex);
+	glBindTexture(GL_TEXTURE_2D, weathertex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, weatherNoiseArray);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(weatherNoiseArray);
+
+	unsigned char* worlNoiseArray = stbi_load("assets/VolumeCloud/worlnoise.bmp", &x, &y, &n, 0);
+	glGenTextures(1, &worltex);
+	glBindTexture(GL_TEXTURE_3D, worltex);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 32, 32, 32, 0, GL_RGB, GL_UNSIGNED_BYTE, worlNoiseArray);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_3D);
+	glBindTexture(GL_TEXTURE_3D, 0);
+	stbi_image_free(worlNoiseArray);
+
+	unsigned char* perlWorlNoiseArray = stbi_load("assets/VolumeCloud/perlworlnoise.tga", &x, &y, &n, 4);
+
+	glGenTextures(1, &perlworltex);
+	glBindTexture(GL_TEXTURE_3D, perlworltex);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, 128, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, perlWorlNoiseArray);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_3D);
+	glBindTexture(GL_TEXTURE_3D, 0);
+	stbi_image_free(perlWorlNoiseArray);
+
+}
+
+void WaterScene::initWater()
+{
+	auto& app = AppRuntime::getInstance();
+	//生成水纹
+	int hVert = 128;
+	int vVert = 90;
+	createStrip(hVert, vVert, 0.5f);
+
+	//纹理
+	waterTexture.setfileLocation((char*)("textures/water.png"), PNG_RGBA);
+	waterTexture1.setfileLocation((char*)("textures/water_tranverse1.png"), JPG_RGB);
+	waterTexture2.setfileLocation((char*)("textures/water_tranverse2.png"), JPG_RGB);
+	waterTexture3.setfileLocation((char*)("textures/water_tranverse3.png"), PNG_RGBA);
+	waterTexture.LoadTexture();
+	waterTexture1.LoadTexture();
+	waterTexture2.LoadTexture();
+	waterTexture3.LoadTexture();
+	//材质
+	waterMaterial = Material(1.0f, 64);
+	//光照 color:白 漫反射参数0.7 光源方向0.5*3
+	//mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, 0.5, 0.5f, 0.5f, 1.0f);
+	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, -5.5f, -0.5f, -0.5f, 1.0f);
+
+	projection = glm::perspective(
+		glm::radians(camera->getFov()),
+		1.0f * app.getWindowWidth() / app.getWindowHeight(),
+		0.1f,
+		100.0f
+	);
+	//shader
+	WaterShader ocean;
+	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
+	shaderList.push_back(ocean);
+
+}
+
+void WaterScene::initModel()
+{
+	// 准备派蒙。
+	Actor* paimon = new Actor;
+	paimon->setScale(glm::vec3(0.2));
+	this->addActor(paimon);
+
+	paimonModel = new Model("assets/genshin-impact/paimon/paimon.pmx");
+	paimon->bindModel(paimonModel);
+
+	if (paimonShader.errcode != ShaderError::SHADER_OK) {
+		cout << "paimon shader err: " << paimonShader.errmsg << endl;
+	}
+}
+
+WaterScene::WaterScene() {
+	auto& app = AppRuntime::getInstance();
+	//天空盒
+	vector<string> skyboxFaces({
+		//"assets/SkyBox/right.jpg",
+		//"assets/SkyBox/left.jpg",
+		//"assets/SkyBox/top.jpg",
+		//"assets/SkyBox/bottom.jpg",
+		//"assets/SkyBox/front.jpg",
+		//"assets/SkyBox/back.jpg"
+		"assets/NewSky/right.png",
+		"assets/NewSky/left.png",
+		"assets/NewSky/top.png",
+		"assets/NewSky/bottom.png",
+		"assets/NewSky/front.png",
+		"assets/NewSky/back.png"
+		});
+	pSkybox = new Skybox(skyboxFaces);
+	//摄像机
+	camera = SceneManager::getInstance().currentScene()->camera;
+	camera->setPosition(glm::vec3(0, 3, 3));
+	camera->setYaw(-84.0f);
+	camera->setPitch(23.8f);
+	//初始化云
+	bindCloudShader();
+	initCloud();
+	//初始化水
+	initWater();
+	initModel();
+
+}
+
 WaterScene::~WaterScene() {
 	if (this->pSkybox) {
 		delete this->pSkybox;
 		this->pSkybox = nullptr;
 	}
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
 	glDeleteTextures(1, &(waterTexture.id));
 	glDeleteTextures(1, &(waterTexture1.id));
 	glDeleteTextures(1, &(waterTexture2.id));
 	glDeleteTextures(1, &(waterTexture3.id));
-
+	glDeleteTextures(1, &perlworltex);
+	glDeleteTextures(1, &worltex);
+	glDeleteTextures(1, &curltex);
+	glDeleteTextures(1, &weathertex);
 }
-void WaterScene::calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
+
+void WaterScene::calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* water_vertices, unsigned int verticeCount,
 	unsigned int vLength, unsigned int normalOffset, int hVertices)
 {
 	int counter = 0;
@@ -345,15 +509,15 @@ void WaterScene::calculateAverageNormals(unsigned int* indices, unsigned int ind
 		unsigned int in0 = indices[i] * vLength;
 		unsigned int in1 = indices[i + 1] * vLength;
 		unsigned int in2 = indices[i + 2] * vLength;
-		glm::vec3 v1(vertices[in1] - vertices[in0], vertices[in1 + 1] - vertices[in0 + 1], vertices[in1 + 2] - vertices[in0 + 2]);
-		glm::vec3 v2(vertices[in2] - vertices[in0], vertices[in2 + 1] - vertices[in0 + 1], vertices[in2 + 2] - vertices[in0 + 2]);
+		glm::vec3 v1(water_vertices[in1] - water_vertices[in0], water_vertices[in1 + 1] - water_vertices[in0 + 1], water_vertices[in1 + 2] - water_vertices[in0 + 2]);
+		glm::vec3 v2(water_vertices[in2] - water_vertices[in0], water_vertices[in2 + 1] - water_vertices[in0 + 1], water_vertices[in2 + 2] - water_vertices[in0 + 2]);
 		glm::vec3 normal = glm::cross(v1, v2);
 		normal = glm::normalize(normal);
 
 		in0 += normalOffset; in1 += normalOffset; in2 += normalOffset;
-		vertices[in0] += normal.x; vertices[in0 + 1] += normal.y; vertices[in0 + 2] += normal.z;
-		vertices[in1] += normal.x; vertices[in1 + 1] += normal.y; vertices[in1 + 2] += normal.z;
-		vertices[in2] += normal.x; vertices[in2 + 1] += normal.y; vertices[in2 + 2] += normal.z;
+		water_vertices[in0] += normal.x; water_vertices[in0 + 1] += normal.y; water_vertices[in0 + 2] += normal.z;
+		water_vertices[in1] += normal.x; water_vertices[in1 + 1] += normal.y; water_vertices[in1 + 2] += normal.z;
+		water_vertices[in2] += normal.x; water_vertices[in2 + 1] += normal.y; water_vertices[in2 + 2] += normal.z;
 
 		if (counter == 2 * hVertices - 3)
 		{
@@ -368,13 +532,13 @@ void WaterScene::calculateAverageNormals(unsigned int* indices, unsigned int ind
 	for (size_t i = 0; i < verticeCount / vLength; i++)
 	{
 		unsigned int nOffset = i * vLength + normalOffset;
-		glm::vec3 vec(vertices[nOffset], vertices[nOffset + 1], vertices[nOffset + 2]);
+		glm::vec3 vec(water_vertices[nOffset], water_vertices[nOffset + 1], water_vertices[nOffset + 2]);
 		vec = glm::normalize(vec);
-		vertices[nOffset] = vec.x; vertices[nOffset + 1] = vec.y; vertices[nOffset + 2] = vec.z;
+		water_vertices[nOffset] = vec.x; water_vertices[nOffset + 1] = vec.y; water_vertices[nOffset + 2] = vec.z;
 	}
 }
 
-void WaterScene::CreateStrip(int hVertices, int ​vVertices, float size)
+void WaterScene::createStrip(int hVertices, int ​vVertices, float size)
 {
 	/*GLuint indices[] = {0, 4, 1, 5, 2, 6, 3, 7,
 						7, 4,
@@ -429,7 +593,7 @@ void WaterScene::CreateStrip(int hVertices, int ​vVertices, float size)
 		number++;
 	}
 
-	//GLfloat vertices[] = {
+	//GLfloat water_vertices[] = {
 	//	//x			y			z			u		v			normalX		normalY		normalZ
 	//	0.0f,		0.0f,		0.0f,		0.0f,	1.0f,		0.0f,		0.0f,		0.0f,
 	//	size,		0.0f,		0.0f,		0.33f,	1.0f,		0.0f,		0.0f,		0.0f,
@@ -452,21 +616,21 @@ void WaterScene::CreateStrip(int hVertices, int ​vVertices, float size)
 	//	3 * size,	-3 * size,	0.0f,		1.0f,	0.0f,		0.0f,		0.0f,		0.0f
 	//};
 
-	GLfloat* vertices = new GLfloat[hVertices * ​vVertices * 8];
+	GLfloat* water_vertices = new GLfloat[hVertices * ​vVertices * 8];
 	int xMultiplier = 0;
 	int yMultiplier = 0;
 	float uIncrement = 0.0f;
 	float vIncrement = 1.0f;
 	for (int i = 0; i < hVertices * ​vVertices * 8; i += 8)
 	{
-		vertices[i] = xMultiplier * size;				//x
-		vertices[i + 1] = yMultiplier * (-size);		//y
-		vertices[i + 2] = 0;							//z
-		vertices[i + 3] = uIncrement;					//u
-		vertices[i + 4] = vIncrement;					//v
-		vertices[i + 5] = 0.0f;							//normalX
-		vertices[i + 6] = 0.0f;							//normalY
-		vertices[i + 7] = 0.0f;							//normalZ
+		water_vertices[i] = xMultiplier * size;				//x
+		water_vertices[i + 1] = yMultiplier * (-size);		//y
+		water_vertices[i + 2] = 0;							//z
+		water_vertices[i + 3] = uIncrement;					//u
+		water_vertices[i + 4] = vIncrement;					//v
+		water_vertices[i + 5] = 0.0f;							//normalX
+		water_vertices[i + 6] = 0.0f;							//normalY
+		water_vertices[i + 7] = 0.0f;							//normalZ
 
 		xMultiplier++;
 		uIncrement += (1.0f / (hVertices - 1));
@@ -480,98 +644,106 @@ void WaterScene::CreateStrip(int hVertices, int ​vVertices, float size)
 		}
 	}
 
-	calculateAverageNormals(indices, 2 * hVertices * (​vVertices - 1) + 2 * (​vVertices - 2), vertices, hVertices * ​vVertices * 8, 8, 5, hVertices);
+	calculateAverageNormals(indices, 2 * hVertices * (​vVertices - 1) + 2 * (​vVertices - 2), water_vertices, hVertices * ​vVertices * 8, 8, 5, hVertices);
 
 	WaterMesh* obj1 = new WaterMesh;// (GL_TRIANGLE_STRIP);
-	obj1->CreateMesh(vertices, indices, hVertices * ​vVertices * 8, 2 * hVertices * (​vVertices - 1) + 2 * (​vVertices - 2));
+	obj1->CreateMesh(water_vertices, indices, hVertices * ​vVertices * 8, 2 * hVertices * (​vVertices - 1) + 2 * (​vVertices - 2));
 	meshList.push_back(obj1);
 }
 
 //时刻改变位置，这里不需要
 void WaterScene::tick(float deltaT) {
-
-	//auto cube1 = this->actors[0];
-	//cube1->setYaw(cube1->getYaw() + deltaT * 20);
+	printf("%5.2f fps\r", 1 / deltaT);
 }
-
-
 void WaterScene::render() {
 	auto& runtime = AppRuntime::getInstance();
 
+	renderCloud();
 	pSkybox->render();
-	RenderWater();
 
-	//for (auto it : this->actors) {
-	//    it.second->render(&shaderList[0]);
-	//}
-
+	renderWater();
 
 }
-
-WaterScene::WaterScene() {
+void WaterScene::renderCloud()
+{
 	auto& runtime = AppRuntime::getInstance();
 
-	projection = glm::mat4(1.0f);
-	vector<string> skyboxFaces({
-		"assets/SpaceboxCollection/Spacebox3/LightGreen_right1.png",
-		"assets/SpaceboxCollection/Spacebox3/LightGreen_left2.png",
-		"assets/SpaceboxCollection/Spacebox3/LightGreen_top3.png",
-		"assets/SpaceboxCollection/Spacebox3/LightGreen_bottom4.png",
-		"assets/SpaceboxCollection/Spacebox3/LightGreen_front5.png",
-		"assets/SpaceboxCollection/Spacebox3/LightGreen_back6.png"
-		});
-
-	pSkybox = new Skybox(skyboxFaces);
-
-	camera = SceneManager::getInstance().currentScene()->camera;
-
-	camera->setPosition(glm::vec3(0, 3, 3));
-	camera->setYaw(-84.0f);
-	camera->setPitch(23.8f);
-
-	//camera->setPosition(glm::vec3(0.0f, 3.0f, 0.0f));
+	int WIDTH = runtime.getWindowWidth();
+	int HEIGHT = runtime.getWindowHeight();
 
 
-	int hVert = 128;
-	int vVert = 90;
-
-	CreateStrip(hVert, vVert, 0.5f);
-
-	WaterShader ocean;
-	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
-
-	shaderList.push_back(ocean);
-
-	waterTexture.setfileLocation((char*)("textures/water.png"), PNG_RGBA);
-	waterTexture1.setfileLocation((char*)("textures/water_tranverse1.png"), JPG_RGB);
-	waterTexture2.setfileLocation((char*)("textures/water_tranverse2.png"), JPG_RGB);
-	waterTexture3.setfileLocation((char*)("textures/water_tranverse3.png"), PNG_RGBA);
-	waterTexture.LoadTexture();
-	waterTexture1.LoadTexture();
-	waterTexture2.LoadTexture();
-	waterTexture3.LoadTexture();
-
-	waterMaterial = Material(1.0f, 64);
-	//color:白
-	//漫反射参数0.7
-	//光源方向0.5*3
-	//mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, 0.5, 0.5f, 0.5f, 1.0f);
-	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, -5.5f, -0.5f, -0.5f, 1.0f);
-
-	projection = glm::perspective(
+	auto view = camera->getViewMatrix();
+	auto projection = glm::perspective(
 		glm::radians(camera->getFov()),
 		1.0f * runtime.getWindowWidth() / runtime.getWindowHeight(),
 		0.1f,
 		100.0f
 	);
 
+	//云层厚度减到50%，光线步进的步长增大两倍，采样深度除以2——平视时fps大概在20左右，仰视100+
+	//删去3了个不必要的framebuffer，速度提升了4-5倍，fps在100-800不等
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	//draw screen
+	paimonShader.use();
+	paimonShader.setMatrix4fv("projection", projection)
+		.setMatrix4fv("view", view);
+	for (auto it : this->actors) {
+
+		paimonShader.setMatrix4fv("model", it.second->getModelMatrix());
+		it.second->render(&paimonShader);
+	}
+
+	skyShader.use();
+
+	GLfloat timePassed = glfwGetTime();
+	skyShader.setFloat("time", timePassed);
+
+	skyShader.setMatrix4fv("MVPM", projection * view);
+	GLfloat ASPECT = float(WIDTH) / float(HEIGHT);
+	skyShader.setFloat("aspect", ASPECT);
+	skyShader.setVector3f("cameraPos", camera->getPosition());
+	skyShader.setInt("check", 0);//已废除
+	skyShader.setVector2f("resolution", WIDTH, HEIGHT);
+	skyShader.setFloat("downscale", downscale);
+	skyShader.setFloat("cloud_density", cloud_density);
+	skyShader.setInt("perlworl", 0);
+	skyShader.setInt("worl", 1);
+	skyShader.setInt("curl", 2);
+	skyShader.setInt("weather", 3);
+
+	//variables for preetham model
+	const float PI = 3.141;
+	float time_fixed = 1;
+	float theta = PI * (-0.23 + 0.25 * sin(time_fixed * 0.1));
+	float phi = 2 * PI * (-0.25);
+	float sunposx = cos(phi);
+	float sunposy = sin(phi) * sin(theta);
+	float sunposz = sin(phi) * cos(theta);
+
+	//glUniform3f(psunPosition, GLfloat(sunposx), GLfloat(sunposy), GLfloat(sunposz));
+	skyShader.setVector3f("sunPosition", sunposx, sunposy, sunposz);
+
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, perlworltex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D, worltex);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, curltex);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, weathertex);
+
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindVertexArray(0);
+
 }
 
-void WaterScene::draw_half_water(glm::vec3 position)
-{
-	;
-}
-void WaterScene::RenderWater()
+
+void WaterScene::renderWater()
 {
 
 	shaderList[0].useWater();
@@ -586,11 +758,7 @@ void WaterScene::RenderWater()
 	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
 	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 
-	//cout << "camera:" << camera->getPosition().x << ' ' << camera->getPosition().y << ' ' << camera->getPosition().z << endl;
-	draw_half_water(glm::vec3(10.0f, -25.0f, 7.0f));
-	draw_half_water(glm::vec3(10 - 126.5, -25.0f, 7.0f));
-
-	glm::vec3 position = glm::vec3(10.0f, -25.0f, 7.0f);
+	glm::vec3 position = glm::vec3(10.0f, -15.0f, 7.0f);
 	glm::mat4 model = glm::mat4(1.0);
 
 	model = glm::translate(model, position);
@@ -617,7 +785,7 @@ void WaterScene::RenderWater()
 	meshList[0]->RenderMesh();
 
 	//第2部分
-	position = glm::vec3(10 - 126.5, -25.0f, 7.0f);
+	position = glm::vec3(10 - 126.5, -15.0f, 7.0f);
 	model = glm::mat4(1.0);
 
 	model = glm::translate(model, position);

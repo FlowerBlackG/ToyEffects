@@ -22,14 +22,14 @@ const float amplitude = 0.05 ;
 
 float Height()
 {
-	float component1 = sin(2.0 * PI * uvScroll + (pos.x * 16.0)) * amplitude;
-	float component2 = sin(2.0 * PI * uvScroll + (pos.y * pos.x * 8.0)) * amplitude;
-	return component1 + component2;
-	//float speeded=uvScroll*1.5;
-	//float component1 = sin( 2.0 * PI *speeded  -2*0.707*pos.x-0.707*pos.y) * amplitude;
-	//float component2 = sin(2.0 * PI *speeded -2*pos.x) * amplitude;
-	//float component3 = sin(2.0 * PI *speeded -2*pos.y) * amplitude;
-	//return component1 + component2+component3;
+	//float component1 = sin(2.0 * PI * uvScroll + (pos.x * 16.0)) * amplitude;
+	//float component2 = sin(2.0 * PI * uvScroll + (pos.y * pos.x * 8.0)) * amplitude;
+	//return component1 + component2;
+	float speeded=uvScroll*1.5;
+	float component1 = sin( 2.0 * PI *speeded  -2*0.707*pos.x-0.707*pos.y) * amplitude;
+	float component2 = sin(2.0 * PI *speeded -2*pos.x) * amplitude;
+	float component3 = sin(2.0 * PI *speeded -2*pos.y) * amplitude;
+	return component1 + component2+component3;
 }
 
 void main()
