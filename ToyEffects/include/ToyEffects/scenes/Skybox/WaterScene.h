@@ -1,63 +1,78 @@
-
+Ôªø
 #pragma once
 
 #include <ToyGraph/Scene/Scene.h>
 #include <ToyGraph/Skybox.h>
 #include <ToyGraph/Camera.h>
 #include <ToyGraph/Actor.h>
-//#include <ToyEffects/scenes/Skybox/gl4ext.h>
-//#include <ToyEffects/scenes/Skybox/terrainquadtree.h>
-
-//OpenGLMesh* oceanmesh = nullptr;
-//
-//OpenGLEffect* debugeffect = nullptr;
-//OpenGLEffect* updatespectrum = nullptr;
-//OpenGLEffect* fourier_dft = nullptr;	// bruteforce solution
-//OpenGLEffect* fourier_fft = nullptr;	// fast fourier transform
-//OpenGLEffect* createdisp = nullptr;	// displacement
-//OpenGLEffect* creategrad = nullptr;	// normal & jacobian
-//OpenGLEffect* oceaneffect = nullptr;
-//OpenGLEffect* wireeffect = nullptr;
-//OpenGLEffect* skyeffect = nullptr;
-//
-//OpenGLScreenQuad* screenquad = nullptr;
-//
-//TerrainQuadTree		tree;
+#include <stb_image.h>
 
 class WaterScene : public Scene {
 public:
-	//±‰¡ø
-	int cnt;		//‘›∂®
-	//∫Ø ˝
-    ~WaterScene();
 
-    static WaterScene* constructor() {
-        return new WaterScene;
-    }
+	//ÂáΩÊï∞
+	~WaterScene();
 
-    virtual void render() override;
-    virtual void tick(float deltaT) override;
+	static WaterScene* constructor() {
+		return new WaterScene;
+	}
 
-    WaterScene();
+	virtual void render() override;
+	virtual void tick(float deltaT) override;
 
-    void cursorPosCallback(double xPos, double yPos) override;
+	WaterScene();
 
-    void activeKeyInputProcessor(GLFWwindow* window, float deltaT) override;
+	void cursorPosCallback(double xPos, double yPos) override;
 
-    bool InitScene();
-	void UninitScene();
-	//void GenerateLODLevels(OpenGLAttributeRange** subsettable, unsigned int* numsubsets, uint32_t* idata);
-	unsigned int GenerateBoundaryMesh(int deg_left, int deg_top, int deg_right, int deg_bottom, int levelsize, uint32_t* idata);
-    float Phillips(const glm::vec2& k, const glm::vec2& w, float V, float A);
+	void activeKeyInputProcessor(GLFWwindow* window, float deltaT) override;
 
 
-    Skybox* pSkybox = nullptr;
+	void RenderWater();
+	void CreateStrip(int hVertices, int ‚ÄãvVertices, float size);
+	void calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
+		unsigned int vLength, unsigned int normalOffset, int hVertices);
+	void draw_half_water(glm::vec3 position);
+	Skybox* pSkybox = nullptr;
 
-    //ª≠∏ˆcube
-    Shader cube{
-        "shaders/cube.vs",
-        "shaders/cube.fs"
-    };
+
+	glm::mat4 projection;
+};
+
+class WaterMesh :Mesh {
+protected:
+	unsigned int indexCount;
+
+
+public:
+	WaterMesh();
+	void CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int numOfVertices, unsigned int numOfIndices);
+	void RenderMesh();
+
 
 };
 
+class WaterShader :Shader
+{
+public:
+	void read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryShaderFilePath);
+	void useWater();
+	GLuint getId();
+};
+
+class WaterTexture {
+
+	int width, height, bitDepth;
+	char* fileLocation;
+	/**
+	 * Á∫πÁêÜÁ±ªÂûã„ÄÇÂ¶ÇÔºöspecular, diffuse.
+	 */
+	TextureType type;
+	int RGB_type;
+
+public:
+	GLuint id;
+	void setfileLocation(char* s, int RGBtype);
+	void LoadTexture();
+	void UseTexture();
+	WaterTexture();
+};

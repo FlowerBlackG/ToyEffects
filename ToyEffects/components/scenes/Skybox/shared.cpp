@@ -4,6 +4,7 @@
 #include <ToyEffects/scenes/Skybox/PaimonScene.h>
 #include <ToyEffects/scenes/Skybox/NahidaScene.h>
 #include <ToyEffects/scenes/Skybox/WaterScene.h>
+#include <ToyEffects/scenes/Skybox/VCloudScene.h>
 #include <ToyEffects/scenes/Skybox/shared.h>
 
 static float lastX = 0;
@@ -89,6 +90,12 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
         && runtime.lastFrameKeyStatus[GLFW_KEY_P] == GLFW_RELEASE
     ) {
         SceneManager::getInstance().navigateTo(PaimonScene::constructor);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS
+        && runtime.lastFrameKeyStatus[GLFW_KEY_P] == GLFW_RELEASE
+        ) {
+        SceneManager::getInstance().navigateTo(VCloudScene::constructor);
     }
 
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS
