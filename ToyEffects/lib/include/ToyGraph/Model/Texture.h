@@ -33,3 +33,4 @@ private:
     TextureUtils(const TextureUtils&) = default;
 
 };
+
