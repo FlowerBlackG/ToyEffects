@@ -102,12 +102,12 @@ void MainScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
     }
     
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS
-        && runtime.lastFrameKeyStatus[GLFW_KEY_N] == GLFW_RELEASE
+        && runtime.lastFrameKeyStatus[GLFW_KEY_Z] == GLFW_RELEASE
         ) {
         SceneManager::getInstance().navigateTo(WaterScene::constructor);
     }
     if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS
-        && runtime.lastFrameKeyStatus[GLFW_KEY_V] == GLFW_RELEASE
+        && runtime.lastFrameKeyStatus[GLFW_KEY_N] == GLFW_RELEASE
         ) {
         SceneManager::getInstance().navigateTo(VCloudScene::constructor);
     }

@@ -463,6 +463,7 @@
     <ClInclude Include="lib\include\ToyGraph\AppRuntime.h" />
     <ClInclude Include="lib\include\ToyGraph\Camera.h" />
     <ClInclude Include="lib\include\ToyGraph\Engine.h" />
+    <ClInclude Include="lib\include\ToyGraph\GUI.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Mesh.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Model.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Texture.h" />
@@ -470,7 +471,6 @@
     <ClInclude Include="lib\include\ToyGraph\Scene\SceneManager.h" />
     <ClInclude Include="lib\include\ToyGraph\Shader.h" />
     <ClInclude Include="lib\include\ToyGraph\Skybox.h" />
-    <ClInclude Include="VCloudGUI.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shaders\skybox\skybox.frag" />

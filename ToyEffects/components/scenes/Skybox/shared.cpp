@@ -92,7 +92,7 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
     }
 
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS
-        && runtime.lastFrameKeyStatus[GLFW_KEY_P] == GLFW_RELEASE
+        && runtime.lastFrameKeyStatus[GLFW_KEY_Z] == GLFW_RELEASE
         ) {
         SceneManager::getInstance().navigateTo(WaterScene::constructor);
     }

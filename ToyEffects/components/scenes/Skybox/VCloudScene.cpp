@@ -9,22 +9,7 @@
 
 using namespace std;
 
-//void setGUI()
-//{
-//    float h;
-//    ImGui::Begin("Water controls");
-//    ImGui::SliderFloat("Water height", &h, 0.0f, 1000.f);
-//    ImGui::End();
-//}
-//void createGUI(GLFWwindow* window)
-//{
-//    // GUI
-//    ImGui::CreateContext();
-//    ImGui::StyleColorsDark();
-//
-//    ImGui_ImplGlfw_InitForOpenGL(window, true);
-//    ImGui_ImplOpenGL3_Init("#version 130");
-//}
+
 
 void VCloudScene::cursorPosCallback(double xPos, double yPos) {
     __nahidaPaimonSharedCursorPosCallback(xPos, yPos);
@@ -49,11 +34,13 @@ VCloudScene::~VCloudScene() {
     glDeleteTextures(1, &curltex);
     glDeleteTextures(1, &weathertex);
 
+    if (vcgui)
+        delete vcgui;
+    
 }
 
 void VCloudScene::tick(float deltaT) {
     //cout <<setw(5)<< 1/deltaT<<" fps\r";
-    printf("%5.2f fps\r", 1/deltaT);
 }
 
 
@@ -78,6 +65,7 @@ void VCloudScene::render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+   
     //draw screen
     paimonShader.use();
     paimonShader.setMatrix4fv("projection", projection)
@@ -88,6 +76,13 @@ void VCloudScene::render() {
         it.second->render(&paimonShader);
     }
 
+    //由于云的frag深度是1，天空盒深度也是1，这里不用深度测试，而是开启混合模式，先画天空盒再画云
+    //https://learnopengl-cn.readthedocs.io/zh/latest/04%20Advanced%20OpenGL/03%20Blending/
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);     //开透明度混合模式
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);//混合function
+
+    pSkybox->render();
     skyShader.use();
 
     GLfloat timePassed= glfwGetTime();
@@ -105,6 +100,8 @@ void VCloudScene::render() {
     skyShader.setInt("worl", 1);
     skyShader.setInt("curl", 2);
     skyShader.setInt("weather", 3);
+    skyShader.setFloat("speed", timespeed);
+    skyShader.setVector3f("color_style", color_style);
 
     //variables for preetham model
     const float PI = 3.141;
@@ -131,7 +128,11 @@ void VCloudScene::render() {
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
-   
+    //开启深度测试、关闭混合模式
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    //render gui
+    vcgui->render();
 }
 
 
@@ -145,6 +146,16 @@ VCloudScene::VCloudScene() {
     camera->setPitch(23.8f);
     //get appruntime
     auto& app = AppRuntime::getInstance();
+    vector<string> skyboxFaces({
+        "assets/SpaceboxCollection/Spacebox1/_left.png",
+        "assets/SpaceboxCollection/Spacebox1/_right.png",
+        "assets/SpaceboxCollection/Spacebox1/_top.png",
+        "assets/SpaceboxCollection/Spacebox1/_bottom.png",
+        "assets/SpaceboxCollection/Spacebox1/_front.png",
+        "assets/SpaceboxCollection/Spacebox1/_back.png"
+        });
+
+    pSkybox = new Skybox(skyboxFaces);
 
     if (skyShader.errcode != ShaderError::SHADER_OK) {
         cout << "VCloud:sky shader err: " << skyShader.errmsg << endl;
@@ -153,7 +164,7 @@ VCloudScene::VCloudScene() {
     if (postShader.errcode != ShaderError::SHADER_OK) {
         cout << "VCloud:post shader err: " << postShader.errmsg << endl;
     }
-
+    
     //init a square
     GLfloat vertices[] = {
              -1.0f, -1.0f,
@@ -179,6 +190,7 @@ VCloudScene::VCloudScene() {
     unsigned char* curlNoiseArray = stbi_load("assets/VolumeCloud/curlNoise_1.png", &x, &y, &n, 0);
     //curl噪声
     glGenTextures(1, &curltex);
+    glBindTexture(GL_TEXTURE_2D, curltex);
     glBindTexture(GL_TEXTURE_2D, curltex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 128, 128, 0, GL_RGB, GL_UNSIGNED_BYTE, curlNoiseArray);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -229,5 +241,20 @@ VCloudScene::VCloudScene() {
     if (paimonShader.errcode != ShaderError::SHADER_OK) {
         cout << "paimon shader err: " << paimonShader.errmsg << endl;
     }
-  //  createGUI(app.getWindow());
+
+
+
+    
+    //  create GUI 
+    
+    vcgui = new GUI(this,app.getWindow());
+    //enable mouse
+    glfwSetInputMode(app.getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
+void VCloudScene::setGUI() 
+{
+    ImGui::TextColored(ImVec4(1, 1, 0, 1),"Scene average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::SliderFloat("cloud type", &cloud_density, 0.3f, 1.0f);
+    ImGui::ColorEdit3("cloud color", (float*)&(color_style));
+    ImGui::SliderFloat("cloud type", &timespeed, 20.0f, 100.0f);
+};

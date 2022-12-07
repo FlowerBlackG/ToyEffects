@@ -14,6 +14,10 @@ uniform vec2 resolution;
 uniform float downscale;
 //总体云层密度
 uniform float cloud_density;
+//颜色
+uniform vec3 color_style;
+//变化速度
+uniform float speed;
 uniform vec3 cameraPos ;
 
 in vec3 vSunDirection;
@@ -93,7 +97,7 @@ float remap(const float originalValue, const float originalMin, const float orig
 }
 //云层密度计算
 float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
-	p.x += time*60.0;
+	p.x += time*speed;
 	float height_fraction = GetHeightFractionForPoint(length(p));
 	vec4 n = textureLod(perlworl, p*0.0003, LOD);
 	float fbm = n.g*0.625+n.b*0.25+n.a*0.125;
@@ -166,7 +170,7 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 		}
 		
 	}
-	L = max(L,vec3(0.4,0.4,0.4)) * vec3(0.8,0.5,0.8);
+	L = max(L,vec3(0.4,0.4,0.4)) * color_style;//vec3(0.8,0.5,0.8)
 	return vec4(L, alpha);
 }
 void main()
@@ -180,7 +184,7 @@ void main()
 	vec4 uvdir = (vec4(uv.xy, 1.0, 1.0));
 	vec4 worldPos = (inverse((MVPM))*uvdir);
 	//vec3 dir = normalize(worldPos.xyz/worldPos.w);
-	vec3 dir = normalize(worldPos.xyz/worldPos.w-cameraPos);
+	vec3 dir = normalize(worldPos.xyz/worldPos.w);
 	vec4 col = vec4(0.0);
 	if (dir.y>0.0) {
 	
@@ -196,18 +200,21 @@ void main()
 		vec3 raystep = dir*s_dist;
 		vec4 volume;//云层
 		//ray marching 获得云量和颜色
-		volume = march(start, end, raystep*2, int(steps)/2);//好吧 降采样
+		volume = march(start, end, raystep, int(steps));//好吧 降采样
 		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//云量控制在一定的范围
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);
-		vec3 background = vec3(0.4,0.5,0.6);
+		vec3 background = vec3(0.6,0.6,0.6);
 		//mix bgcolor
-		col = vec4(background*(1.0-volume.a)+volume.xyz*volume.a, 1.0);
+		
+		col = vec4(background*(1.0-volume.a)+volume.xyz*volume.a,volume.a);
 		if (volume.a>1.0) {
 			col = vec4(1.0, 0.0, 0.0, 1.0);
 		}
 	} else {
 		col = vec4(vec3(0.0), 0.0);
 	}
+	
+	
 	color = col;
 }

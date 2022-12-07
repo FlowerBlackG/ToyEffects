@@ -1027,9 +1027,6 @@
     <ClInclude Include="include\ToyEffects\scenes\Skybox\VCloudScene.h">
       <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
     </ClInclude>
-    <ClInclude Include="VCloudGUI.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="imgui\imstb_truetype.h">
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
@@ -1053,6 +1050,9 @@
     </ClInclude>
     <ClInclude Include="imgui\imconfig.h">
       <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\include\ToyGraph\GUI.h">
+      <Filter>Header Files\ToyGraph</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,7 @@
 #pragma once
 #include <ToyGraph/Scene/Scene.h>
 #include <ToyGraph/Skybox.h>
+#include <ToyGraph/GUI.h>
 #include <ToyGraph/Camera.h>
 #include <ToyGraph/Actor.h>
 
@@ -12,9 +13,11 @@ public:
     //setup noise textures
     GLuint curltex, worltex, perlworltex, weathertex;
 
-
+    
     ~VCloudScene();
+    GUI* vcgui =nullptr ;
 
+    virtual void setGUI()override;
     static VCloudScene* constructor() {
         return new VCloudScene;
     }
@@ -44,8 +47,7 @@ public:
     GLuint downscalesq = downscale * downscale;
    // glm::mat4 MVPM;
   // glm::mat4 LFMVPM;
-    int check;
-
+  
 
     Model* paimonModel = nullptr;
     Shader paimonShader{
@@ -53,6 +55,8 @@ public:
         "shaders/shader.frag"
     };
     GLfloat cloud_density=0.5;
+    glm::vec3 color_style = glm::vec3(0.8, 0.5, 0.8);
+    float timespeed = 60.0f;
 };
 
 
