@@ -137,7 +137,6 @@ void VCloudScene::render() {
 
 
 VCloudScene::VCloudScene() {
-    //TODO:add skybox
 
     //init camera
     this->camera = new Camera;
@@ -242,11 +241,7 @@ VCloudScene::VCloudScene() {
         cout << "paimon shader err: " << paimonShader.errmsg << endl;
     }
 
-
-
-    
     //  create GUI 
-    
     vcgui = new GUI(this,app.getWindow());
     //enable mouse
     glfwSetInputMode(app.getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);

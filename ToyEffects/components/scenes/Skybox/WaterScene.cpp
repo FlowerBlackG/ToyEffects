@@ -345,7 +345,13 @@ void WaterScene::bindCloudShader()
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 }
-
+void  WaterScene::initGUI()
+{
+	auto& app = AppRuntime::getInstance();
+	vcgui = new GUI(this, app.getWindow());
+	//enable mouse
+	glfwSetInputMode(app.getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
 void WaterScene::initCloud()
 {
 	if (skyShader.errcode != ShaderError::SHADER_OK) {
@@ -397,6 +403,7 @@ void WaterScene::initCloud()
 	glGenerateMipmap(GL_TEXTURE_3D);
 	glBindTexture(GL_TEXTURE_3D, 0);
 	stbi_image_free(perlWorlNoiseArray);
+	//  create GUI 
 
 }
 
@@ -441,6 +448,7 @@ void WaterScene::initModel()
 	// 准备派蒙。
 	Actor* paimon = new Actor;
 	paimon->setScale(glm::vec3(0.2));
+	paimon->setPosition(glm::vec3(0.0f,2.0f,0.0f));
 	this->addActor(paimon);
 
 	paimonModel = new Model("assets/genshin-impact/paimon/paimon.pmx");
@@ -455,18 +463,12 @@ WaterScene::WaterScene() {
 	auto& app = AppRuntime::getInstance();
 	//天空盒
 	vector<string> skyboxFaces({
-		//"assets/SkyBox/right.jpg",
-		//"assets/SkyBox/left.jpg",
-		//"assets/SkyBox/top.jpg",
-		//"assets/SkyBox/bottom.jpg",
-		//"assets/SkyBox/front.jpg",
-		//"assets/SkyBox/back.jpg"
-		"assets/NewSky/right.png",
-		"assets/NewSky/left.png",
-		"assets/NewSky/top.png",
-		"assets/NewSky/bottom.png",
-		"assets/NewSky/front.png",
-		"assets/NewSky/back.png"
+		"assets/SkyBox/right3.jpg",
+		"assets/SkyBox/left3.jpg",
+		"assets/SkyBox/top3.jpg",
+		"assets/SkyBox/bottom3.jpg",
+		"assets/SkyBox/front3.jpg",
+		"assets/SkyBox/back3.jpg"
 		});
 	pSkybox = new Skybox(skyboxFaces);
 	//摄像机
@@ -475,6 +477,7 @@ WaterScene::WaterScene() {
 	camera->setYaw(-84.0f);
 	camera->setPitch(23.8f);
 	//初始化云
+	initGUI();
 	bindCloudShader();
 	initCloud();
 	//初始化水
@@ -498,6 +501,9 @@ WaterScene::~WaterScene() {
 	glDeleteTextures(1, &worltex);
 	glDeleteTextures(1, &curltex);
 	glDeleteTextures(1, &weathertex);
+	if (vcgui)
+		delete vcgui;
+
 }
 
 void WaterScene::calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* water_vertices, unsigned int verticeCount,
@@ -656,14 +662,19 @@ void WaterScene::tick(float deltaT) {
 	printf("%5.2f fps\r", 1 / deltaT);
 }
 void WaterScene::render() {
-	auto& runtime = AppRuntime::getInstance();
-
+	
 	renderCloud();
-	pSkybox->render();
 
 	renderWater();
 
 }
+void WaterScene::setGUI()
+{
+	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Scene average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::SliderFloat("cloud type", &cloud_density, 0.3f, 1.0f);
+	ImGui::ColorEdit3("cloud color", (float*)&(color_style));
+	ImGui::SliderFloat("cloud type", &timespeed, 20.0f, 100.0f);
+};
 void WaterScene::renderCloud()
 {
 	auto& runtime = AppRuntime::getInstance();
@@ -684,18 +695,15 @@ void WaterScene::renderCloud()
 	//删去3了个不必要的framebuffer，速度提升了4-5倍，fps在100-800不等
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	//draw screen
-	paimonShader.use();
-	paimonShader.setMatrix4fv("projection", projection)
-		.setMatrix4fv("view", view);
-	for (auto it : this->actors) {
 
-		paimonShader.setMatrix4fv("model", it.second->getModelMatrix());
-		it.second->render(&paimonShader);
-	}
 
+	//由于云的frag深度是1，天空盒深度也是1，这里不用深度测试，而是开启混合模式，先画天空盒再画云
+	//https://learnopengl-cn.readthedocs.io/zh/latest/04%20Advanced%20OpenGL/03%20Blending/
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);     //开透明度混合模式
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);//混合function
+
+	pSkybox->render();
 	skyShader.use();
 
 	GLfloat timePassed = glfwGetTime();
@@ -713,6 +721,8 @@ void WaterScene::renderCloud()
 	skyShader.setInt("worl", 1);
 	skyShader.setInt("curl", 2);
 	skyShader.setInt("weather", 3);
+	skyShader.setFloat("speed", timespeed);
+	skyShader.setVector3f("color_style", color_style);
 
 	//variables for preetham model
 	const float PI = 3.141;
@@ -739,7 +749,24 @@ void WaterScene::renderCloud()
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glBindVertexArray(0);
+	//开启深度测试、关闭混合模式
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	
+	glDepthFunc(GL_LEQUAL);
 
+	//draw screen
+	paimonShader.use();
+	paimonShader.setMatrix4fv("projection", projection)
+		.setMatrix4fv("view", view);
+	for (auto it : this->actors) {
+
+		paimonShader.setMatrix4fv("model", it.second->getModelMatrix());
+		it.second->render(&paimonShader);
+	}
+
+	//render gui
+	vcgui->render();
 }
 
 
@@ -758,7 +785,7 @@ void WaterScene::renderWater()
 	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
 	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 
-	glm::vec3 position = glm::vec3(10.0f, -15.0f, 7.0f);
+	glm::vec3 position = water_pos+glm::vec3(10.0f, -15.0f, 7.0f);
 	glm::mat4 model = glm::mat4(1.0);
 
 	model = glm::translate(model, position);
@@ -785,7 +812,7 @@ void WaterScene::renderWater()
 	meshList[0]->RenderMesh();
 
 	//第2部分
-	position = glm::vec3(10 - 126.5, -15.0f, 7.0f);
+	position = water_pos + glm::vec3(10 - 126.5, -15.0f, 7.0f);
 	model = glm::mat4(1.0);
 
 	model = glm::translate(model, position);

@@ -5,6 +5,7 @@
 #include <ToyGraph/Skybox.h>
 #include <ToyGraph/Camera.h>
 #include <ToyGraph/Actor.h>
+#include <ToyGraph/GUI.h>
 #include <stb_image.h>
 
 class WaterScene : public Scene {
@@ -52,7 +53,7 @@ public:
 
 	//水变量
 	glm::mat4 projection;
-
+	glm::vec3 water_pos=glm::vec3(0.0f, 3.0f, 0.0f);
 	//体积云变量
 	GLuint VBO, VAO;
 	//setup noise textures
@@ -62,6 +63,12 @@ public:
 	int check;
 	GLfloat cloud_density = 0.5;
 
+	glm::vec3 color_style = glm::vec3(0.8, 0.5, 0.8);
+	float timespeed = 60.0f;
+
+	GUI* vcgui = nullptr;
+	virtual void setGUI()override;
+	void initGUI();
 };
 
 class WaterMesh :Mesh {

@@ -204,7 +204,7 @@ void main()
 		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//云量控制在一定的范围
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);
-		vec3 background = vec3(0.6,0.6,0.6);
+		vec3 background = vec3(0.4,0.4,0.4);
 		//mix bgcolor
 		
 		col = vec4(background*(1.0-volume.a)+volume.xyz*volume.a,volume.a);
