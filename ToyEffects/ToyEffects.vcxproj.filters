@@ -52,6 +52,9 @@
     <Filter Include="Header Files\imgui">
       <UniqueIdentifier>{d6e766fb-95c1-4dbe-a368-ddab032be4d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\shaders\shadow">
+      <UniqueIdentifier>{5684368d-caf3-4eb0-8812-3f9a47d3da25}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\lib\ToyGraph.lib">
@@ -100,6 +103,15 @@
     </ClCompile>
     <ClCompile Include="imgui\imgui.cpp">
       <Filter>Header Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="components\scenes\Skybox\WaterCloudShadow.cpp">
+      <Filter>Source Files\components\scenes\Skybox</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1054,6 +1066,15 @@
     <ClInclude Include="lib\include\ToyGraph\GUI.h">
       <Filter>Header Files\ToyGraph</Filter>
     </ClInclude>
+    <ClInclude Include="lib\include\ToyGraph\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\include\ToyGraph\Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterCloudShadow.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="lib\include\glm\detail\func_common.inl">
@@ -1499,6 +1520,39 @@
     </None>
     <None Include="shaders\VolumeCloud\tex.vert">
       <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.fs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.gs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.vs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowPointLight\pointShadows.fs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowPointLight\pointShadows.vs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowTest\debugQuad.vs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowTest\debugQuadDepth.fs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowTest\shadowDepthMap.fs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowTest\shadowDepthMap.vs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowTest\shadowMapping.fs">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\ShadowTest\shadowMapping.vs">
+      <Filter>Source Files\shaders\shadow</Filter>
     </None>
   </ItemGroup>
 </Project>

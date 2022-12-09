@@ -145,6 +145,7 @@
     <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\shared.cpp" />
     <ClCompile Include="components\scenes\Skybox\VCloudScene.cpp" />
+    <ClCompile Include="components\scenes\Skybox\WaterCloudShadow.cpp" />
     <ClCompile Include="components\scenes\Skybox\WaterScene.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="include\ToyEffects\scenes\Skybox\PaimonScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\shared.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\VCloudScene.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterCloudShadow.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterScene.h" />
     <ClInclude Include="lib\include\glad\glad.h" />
     <ClInclude Include="lib\include\GLFW\glfw3.h" />
@@ -621,6 +623,17 @@
     <None Include="shaders\postprocess-screen-shader.vert" />
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.fs" />
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.gs" />
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.vs" />
+    <None Include="shaders\ShadowPointLight\pointShadows.fs" />
+    <None Include="shaders\ShadowPointLight\pointShadows.vs" />
+    <None Include="shaders\ShadowTest\debugQuad.vs" />
+    <None Include="shaders\ShadowTest\debugQuadDepth.fs" />
+    <None Include="shaders\ShadowTest\shadowDepthMap.fs" />
+    <None Include="shaders\ShadowTest\shadowDepthMap.vs" />
+    <None Include="shaders\ShadowTest\shadowMapping.fs" />
+    <None Include="shaders\ShadowTest\shadowMapping.vs" />
     <None Include="shaders\VolumeCloud\sky.frag" />
     <None Include="shaders\VolumeCloud\sky.vert" />
     <None Include="shaders\VolumeCloud\tex.frag" />

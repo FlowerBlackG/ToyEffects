@@ -37,7 +37,7 @@ using namespace std;
 //unsigned int				helptext = 0;
 
 
-//改完fft再一并移入类
+//改完fft再一并移入类——现在就移进去吧
 WaterTexture waterTexture;
 WaterTexture waterTexture1;
 WaterTexture waterTexture2;
