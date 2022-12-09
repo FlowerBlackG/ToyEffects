@@ -466,8 +466,6 @@
     <ClInclude Include="lib\include\ToyGraph\Camera.h" />
     <ClInclude Include="lib\include\ToyGraph\Engine.h" />
     <ClInclude Include="lib\include\ToyGraph\GUI.h" />
-    <ClInclude Include="lib\include\ToyGraph\Light.h" />
-    <ClInclude Include="lib\include\ToyGraph\Material.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Mesh.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Model.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Texture.h" />

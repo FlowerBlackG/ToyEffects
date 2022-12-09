@@ -1,7 +1,5 @@
 ﻿#include <ToyEffects/scenes/Skybox/WaterScene.h>
 #include <ToyGraph/Scene/SceneManager.h>
-#include <ToyGraph/Material.h>
-#include <ToyGraph/Light.h>
 //#include <ToyGraph/shader.h>
 //#include <ToyGraph/model/Mesh.h>
 //#include <ToyGraph/model/Texture.h>
@@ -38,18 +36,8 @@ using namespace std;
 
 
 //改完fft再一并移入类
-WaterTexture waterTexture;
-WaterTexture waterTexture1;
-WaterTexture waterTexture2;
-WaterTexture waterTexture3;
-Material waterMaterial;
-Light mainLight;
-std::vector<WaterMesh*> meshList;
-std::vector<WaterShader> shaderList;
 
-GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformUvScroll = 0, uniformEyePosition = 0,
-uniformAmbientIntensity = 0, uniformAmbientColor = 0, uniformDirection = 0, uniformDiffuseIntensity = 0,
-uniformSpecularIntensity = 0, uniformShininess = 0;
+
 
 
 //把wn标准化
@@ -130,6 +118,7 @@ WaterTexture::WaterTexture()
 	width = height = bitDepth = 0;
 	fileLocation = nullptr;
 }
+
 void WaterTexture::setfileLocation(char* s, int RGBtype)
 {
 	fileLocation = s;
@@ -176,146 +165,6 @@ void WaterTexture::UseTexture()
 	//加
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, id);
-}
-
-//实际没有用几何
-void WaterShader::read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryShaderFilePath)
-{
-	//cout << vertexShaderFilePath;
-	ifstream vShaderFile(vertexShaderFilePath, ios::binary);
-	ifstream fShaderFile(fragmentShaderFilePath, ios::binary);
-	ifstream gShaderFile(geometryShaderFilePath, ios::binary);
-
-	if (!vShaderFile.is_open()) {
-		errmsg = "failed to open vertex shader file.";
-		errcode = ShaderError::V_SHADER_OPEN_FAILED;
-		return;
-	}
-
-	if (!fShaderFile.is_open()) {
-		errmsg = "failed to open fragment shader file.";
-		errcode = ShaderError::F_SHADER_OPEN_FAILED;
-		return;
-	}
-	if (!gShaderFile.is_open()) {
-		errmsg = "failed to open geometry shader file.";
-		errcode = ShaderError::F_SHADER_OPEN_FAILED;
-		return;
-	}
-	stringstream vShaderStream;
-	stringstream fShaderStream;
-	stringstream gShaderStream;
-	vShaderStream << vShaderFile.rdbuf();
-	fShaderStream << fShaderFile.rdbuf();
-	gShaderStream << gShaderFile.rdbuf();
-
-	string stdVShaderCode = vShaderStream.str();
-	string stdFShaderCode = fShaderStream.str();
-	string stdGShaderCode = gShaderStream.str();
-	const char* vShaderCode = stdVShaderCode.c_str();
-	const char* fShaderCode = stdFShaderCode.c_str();
-	const char* gShaderCode = stdGShaderCode.c_str();
-
-	GLuint vertexId;
-	GLuint fragmentId;
-	GLuint geoId;
-	int success;
-	char infoLog[512];
-
-	vertexId = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexId, 1, &vShaderCode, nullptr);
-	glCompileShader(vertexId);
-	glGetShaderiv(vertexId, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(vertexId, sizeof(infoLog) / sizeof(char), nullptr, infoLog);
-		errcode = ShaderError::V_SHADER_COMPILE_FAILED;
-		errmsg = "failed to compile vertex shader. ";
-		errmsg += infoLog;
-		return;
-	}
-
-	fragmentId = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentId, 1, &fShaderCode, nullptr);
-	glCompileShader(fragmentId);
-	glGetShaderiv(fragmentId, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(fragmentId, sizeof(infoLog), nullptr, infoLog);
-		errcode = ShaderError::F_SHADER_COMPILE_FAILED;
-		errmsg = "failed to compile fragment shader. ";
-		errmsg += infoLog;
-		return;
-	}
-
-	//geoId = glCreateShader(GL_GEOMETRY_SHADER);
-	//glShaderSource(geoId, 1, &gShaderCode, nullptr);
-	//glCompileShader(geoId);
-	//glGetShaderiv(geoId, GL_COMPILE_STATUS, &success);
-	//if (!success) {
-	//	glGetShaderInfoLog(geoId, sizeof(infoLog), nullptr, infoLog);
-	//	errcode = ShaderError::F_SHADER_COMPILE_FAILED;
-	//	errmsg = "failed to compile geometry shader. ";
-	//	errmsg += infoLog;
-	//	return;
-	//}
-
-	this->id = glCreateProgram();
-	glAttachShader(id, vertexId);
-	glAttachShader(id, fragmentId);
-	//	glAttachShader(id, geoId);
-	glLinkProgram(id);
-	glGetProgramiv(id, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(id, sizeof(infoLog), nullptr, infoLog);
-		errcode = ShaderError::LINKING_FAILED;
-		errmsg = "failed to link program. ";
-		errmsg += infoLog;
-		return;
-	}
-
-	glValidateProgram(id);
-	glGetProgramiv(id, GL_VALIDATE_STATUS, &success);
-	if (!success)
-	{
-		glGetProgramInfoLog(id, sizeof(infoLog), nullptr, infoLog);
-		printf("Program Validation FAILED: '%s'\n", infoLog);
-		return;
-	}
-
-	uniformModel = glGetUniformLocation(id, "model");
-	uniformProjection = glGetUniformLocation(id, "projection");
-	uniformView = glGetUniformLocation(id, "view");
-	uniformAmbientColor = glGetUniformLocation(id, "directionalLight.colour");
-	uniformAmbientIntensity = glGetUniformLocation(id, "directionalLight.ambientIntensity");
-	uniformDirection = glGetUniformLocation(id, "directionalLight.direction");
-	uniformDiffuseIntensity = glGetUniformLocation(id, "directionalLight.diffuseIntensity");
-	uniformSpecularIntensity = glGetUniformLocation(id, "material.specularIntensity");
-	uniformShininess = glGetUniformLocation(id, "material.shininess");
-	uniformEyePosition = glGetUniformLocation(id, "eyePosition");
-
-	uniformUvScroll = glGetUniformLocation(id, "uvScroll");
-
-
-
-	//glDeleteShader(vertexId);
-	//glDeleteShader(fragmentId);
-	//	glDeleteShader(geoId);
-
-	vShaderFile.close();
-	fShaderFile.close();
-	gShaderFile.close();
-
-	this->errcode = ShaderError::SHADER_OK;
-
-}
-
-void WaterShader::useWater()
-{
-	glUseProgram(id);
-}
-
-GLuint WaterShader::getId()
-{
-	return id;
 }
 
 void WaterScene::cursorPosCallback(double xPos, double yPos) {
@@ -416,19 +265,27 @@ void WaterScene::initWater()
 	createStrip(hVert, vVert, 0.5f);
 
 	//纹理
-	waterTexture.setfileLocation((char*)("textures/water.png"), PNG_RGBA);
-	waterTexture1.setfileLocation((char*)("textures/water_tranverse1.png"), JPG_RGB);
-	waterTexture2.setfileLocation((char*)("textures/water_tranverse2.png"), JPG_RGB);
-	waterTexture3.setfileLocation((char*)("textures/water_tranverse3.png"), PNG_RGBA);
-	waterTexture.LoadTexture();
-	waterTexture1.LoadTexture();
-	waterTexture2.LoadTexture();
-	waterTexture3.LoadTexture();
+	WaterTexture* waterTexture0 = new WaterTexture;
+	WaterTexture* waterTexture1 = new WaterTexture;
+	WaterTexture* waterTexture2 = new WaterTexture;
+	WaterTexture* waterTexture3 = new WaterTexture;
+	waterTexture0->setfileLocation((char*)("textures/water.png"), PNG_RGBA);
+	waterTexture1->setfileLocation((char*)("textures/water_tranverse1.png"), JPG_RGB);
+	waterTexture2->setfileLocation((char*)("textures/water_tranverse2.png"), JPG_RGB);
+	waterTexture3->setfileLocation((char*)("textures/water_tranverse3.png"), PNG_RGBA);
+	waterTexture0->LoadTexture();
+	waterTexture1->LoadTexture();
+	waterTexture2->LoadTexture();
+	waterTexture3->LoadTexture();
+	waterTexture.emplace_back(waterTexture0);
+	waterTexture.emplace_back(waterTexture1);
+	waterTexture.emplace_back(waterTexture2);
+	waterTexture.emplace_back(waterTexture3);
 	//材质
-	waterMaterial = Material(1.0f, 64);
+	//waterMaterial = Material(1.0f, 64);
 	//光照 color:白 漫反射参数0.7 光源方向0.5*3
 	//mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, 0.5, 0.5f, 0.5f, 1.0f);
-	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, -5.5f, -0.5f, -0.5f, 1.0f);
+	//mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, -5.5f, -0.5f, -0.5f, 1.0f);
 
 	projection = glm::perspective(
 		glm::radians(camera->getFov()),
@@ -436,10 +293,9 @@ void WaterScene::initWater()
 		0.1f,
 		100.0f
 	);
-	//shader
-	WaterShader ocean;
-	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
-	shaderList.push_back(ocean);
+	//WaterShader ocean;
+	//ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
+	//shaderList.push_back(ocean);
 
 }
 
@@ -493,10 +349,10 @@ WaterScene::~WaterScene() {
 	}
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteTextures(1, &(waterTexture.id));
-	glDeleteTextures(1, &(waterTexture1.id));
-	glDeleteTextures(1, &(waterTexture2.id));
-	glDeleteTextures(1, &(waterTexture3.id));
+	glDeleteTextures(1, &(waterTexture[0]->id));
+	glDeleteTextures(1, &(waterTexture[1]->id));
+	glDeleteTextures(1, &(waterTexture[2]->id));
+	glDeleteTextures(1, &(waterTexture[3]->id));
 	glDeleteTextures(1, &perlworltex);
 	glDeleteTextures(1, &worltex);
 	glDeleteTextures(1, &curltex);
@@ -654,7 +510,8 @@ void WaterScene::createStrip(int hVertices, int ​vVertices, float size)
 
 	WaterMesh* obj1 = new WaterMesh;// (GL_TRIANGLE_STRIP);
 	obj1->CreateMesh(water_vertices, indices, hVertices * ​vVertices * 8, 2 * hVertices * (​vVertices - 1) + 2 * (​vVertices - 2));
-	meshList.push_back(obj1);
+	waterMesh = obj1;
+	//meshList.push_back(obj1);
 }
 
 //时刻改变位置，这里不需要
@@ -773,18 +630,17 @@ void WaterScene::renderCloud()
 void WaterScene::renderWater()
 {
 
-	shaderList[0].useWater();
-
-	WaterShader first = shaderList[0];
-	glUseProgram(first.getId());
-	glUniform1f(uniformUvScroll, glfwGetTime() / 5);
-
-	mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
-
-	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
-	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
-	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
-
+	watershader.use();
+	watershader.setFloat("uvScroll", glfwGetTime() / 5);
+	watershader.setVector3f("directionalLight.colour", 1.0f, 1.0f, 1.0f);
+	watershader.setFloat("directionalLight.ambientIntensity", 0.7f);
+	watershader.setVector3f("directionalLight.direction", -5.5f, -0.5f, -0.5f);
+	watershader.setFloat("directionalLight.diffuseIntensity", 1.0f);
+	watershader.setFloat("material.specularIntensity", 1.0f);
+	watershader.setFloat("material.shininess", 64);
+	watershader.setMatrix4fv("projection", projection);
+	watershader.setMatrix4fv("view", camera->getViewMatrix());
+	watershader.setVector3f("eyePosition", camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 	glm::vec3 position = water_pos+glm::vec3(10.0f, -15.0f, 7.0f);
 	glm::mat4 model = glm::mat4(1.0);
 
@@ -792,12 +648,9 @@ void WaterScene::renderWater()
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
 	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
-
-	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	watershader.setMatrix4fv("model", model);
+	waterTexture[0]->UseTexture();
+	waterMesh->RenderMesh();
 
 	const int offset = 88.5;
 	glm::vec3 position2 = glm::vec3(position.x, position.y, position.z + offset);
@@ -806,25 +659,21 @@ void WaterScene::renderWater()
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture1.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	watershader.setMatrix4fv("model", model);
+	waterTexture[1]->UseTexture();
+	waterMesh->RenderMesh();
 
 	//第2部分
 	position = water_pos + glm::vec3(10 - 126.5, -15.0f, 7.0f);
 	model = glm::mat4(1.0);
-
 	model = glm::translate(model, position);
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
 	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
-	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture2.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	watershader.setMatrix4fv("model", model);
+	waterTexture[2]->UseTexture();
+	waterMesh->RenderMesh();
 
 	position2 = glm::vec3(position.x, position.y, position.z + offset);
 	model = glm::mat4(1.0);
@@ -832,10 +681,9 @@ void WaterScene::renderWater()
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture3.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	watershader.setMatrix4fv("model", model);
+	waterTexture[3]->UseTexture();
+	waterMesh->RenderMesh();
 
 	glUseProgram(0);
 }

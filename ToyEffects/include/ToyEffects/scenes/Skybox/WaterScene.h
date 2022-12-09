@@ -5,9 +5,11 @@
 #include <ToyGraph/Skybox.h>
 #include <ToyGraph/Camera.h>
 #include <ToyGraph/Actor.h>
+#include<ToyGraph/Model/Texture.h>
 #include <ToyGraph/GUI.h>
 #include <stb_image.h>
-
+class WaterMesh;
+class WaterTexture;
 class WaterScene : public Scene {
 public:
 	//初始化和删除
@@ -48,12 +50,17 @@ public:
 	"shaders/shader.vert",
 	"shaders/shader.frag"
 	};
+	Shader watershader{ 
+		"../shaders/ocean/ocean.vs", 
+		"../shaders/ocean/ocean.fs" };
 	//模型
 	Model* paimonModel = nullptr;
 
 	//水变量
 	glm::mat4 projection;
 	glm::vec3 water_pos=glm::vec3(0.0f, 3.0f, 0.0f);
+	std::vector<WaterTexture*> waterTexture;
+	WaterMesh *waterMesh;
 	//体积云变量
 	GLuint VBO, VAO;
 	//setup noise textures
@@ -82,14 +89,6 @@ public:
 	void RenderMesh();
 
 
-};
-
-class WaterShader :Shader
-{
-public:
-	void read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryShaderFilePath);
-	void useWater();
-	GLuint getId();
 };
 
 class WaterTexture {
