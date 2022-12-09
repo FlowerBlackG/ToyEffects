@@ -200,7 +200,7 @@ void main()
 		vec3 raystep = dir*s_dist;
 		vec4 volume;//云层
 		//ray marching 获得云量和颜色
-		volume = march(start, end, raystep, int(steps));//好吧 降采样
+		volume = march(start, end, raystep*2, int(steps)/2);//好吧 降采样
 		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//云量控制在一定的范围
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);

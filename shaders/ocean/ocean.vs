@@ -43,7 +43,7 @@ void main()
 	
 	vec2 time = vec2(uvScroll, 0.0f);
 	
-	TexCoord = tex + time/2.0f;
+	TexCoord = tex + time;
 	
 	Normal = mat3(transpose(inverse(model))) * norm;
 	

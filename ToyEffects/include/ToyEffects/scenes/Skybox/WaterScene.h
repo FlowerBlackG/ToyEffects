@@ -24,6 +24,7 @@ public:
 	//水函数
 	void initWater();
 	void renderWater();
+	void drawWaterBlock(glm::vec3 base_position, glm::vec3 block_size, int offset, int big_scale);
 	void createStrip(int hVertices, int ​vVertices, float size);
 	void calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
 		unsigned int vLength, unsigned int normalOffset, int hVertices);
@@ -53,7 +54,7 @@ public:
 
 	//水变量
 	glm::mat4 projection;
-	glm::vec3 water_pos=glm::vec3(0.0f, 3.0f, 0.0f);
+	glm::vec3 water_pos=glm::vec3(0.0f, 10.0f, 0.0f);
 	//体积云变量
 	GLuint VBO, VAO;
 	//setup noise textures
@@ -105,7 +106,7 @@ class WaterTexture {
 public:
 	GLuint id;
 	void setfileLocation(char* s, int RGBtype);
-	void LoadTexture();
+	void LoadTexture(int num);
 	void UseTexture();
 	WaterTexture();
 };

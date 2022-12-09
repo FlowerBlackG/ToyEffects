@@ -38,6 +38,7 @@ using namespace std;
 
 
 //改完fft再一并移入类
+WaterTexture wave;
 WaterTexture waterTexture;
 WaterTexture waterTexture1;
 WaterTexture waterTexture2;
@@ -135,8 +136,8 @@ void WaterTexture::setfileLocation(char* s, int RGBtype)
 	fileLocation = s;
 	RGB_type = RGBtype;
 }
-
-void WaterTexture::LoadTexture()
+//指定绑定几号纹理单元
+void WaterTexture::LoadTexture(int num)
 {
 	unsigned char* texData = stbi_load(fileLocation, &width, &height, &bitDepth, 0);
 	if (!texData)
@@ -144,6 +145,20 @@ void WaterTexture::LoadTexture()
 		printf("Could not find: %s\n", fileLocation);
 		return;
 	}
+	//这里只用到两块纹理单元，不写switch了
+	if (num == 0)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(shaderList[0].getId(), "theTexture"), 0);
+
+	}
+
+	else if (num == 1)
+	{
+		glActiveTexture(GL_TEXTURE1);
+		glUniform1i(glGetUniformLocation(shaderList[0].getId(), "waveTexture"), 1);
+	}
+
 
 	glGenTextures(1, &id);
 	glBindTexture(GL_TEXTURE_2D, id);
@@ -160,13 +175,14 @@ void WaterTexture::LoadTexture()
 		//使用jpg贴图
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
 
-	glCheckError();
+	//glCheckError();
 	glGenerateMipmap(GL_TEXTURE_2D);
 
+	if (num == 0)
+		glBindTexture(GL_TEXTURE_2D, 0);
+	else if (num == 1)
+		glBindTexture(GL_TEXTURE_2D, 1);
 
-	//std::cout << glGetError() << std::endl; // 返回 0 (无错误)
-
-	glBindTexture(GL_TEXTURE_2D, 0);
 
 	stbi_image_free(texData);
 }
@@ -414,16 +430,21 @@ void WaterScene::initWater()
 	int hVert = 128;
 	int vVert = 90;
 	createStrip(hVert, vVert, 0.5f);
-
+	//shader
+	WaterShader ocean;
+	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
+	shaderList.push_back(ocean);
 	//纹理
+	//wave.setfileLocation((char*)("textures/wave.png"), JPG_RGB);
 	waterTexture.setfileLocation((char*)("textures/water.png"), PNG_RGBA);
 	waterTexture1.setfileLocation((char*)("textures/water_tranverse1.png"), JPG_RGB);
 	waterTexture2.setfileLocation((char*)("textures/water_tranverse2.png"), JPG_RGB);
 	waterTexture3.setfileLocation((char*)("textures/water_tranverse3.png"), PNG_RGBA);
-	waterTexture.LoadTexture();
-	waterTexture1.LoadTexture();
-	waterTexture2.LoadTexture();
-	waterTexture3.LoadTexture();
+	//wave.LoadTexture(1);
+	waterTexture.LoadTexture(0);
+	waterTexture1.LoadTexture(0);
+	waterTexture2.LoadTexture(0);
+	waterTexture3.LoadTexture(0);
 	//材质
 	waterMaterial = Material(1.0f, 64);
 	//光照 color:白 漫反射参数0.7 光源方向0.5*3
@@ -436,10 +457,7 @@ void WaterScene::initWater()
 		0.1f,
 		100.0f
 	);
-	//shader
-	WaterShader ocean;
-	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
-	shaderList.push_back(ocean);
+
 
 }
 
@@ -476,6 +494,7 @@ WaterScene::WaterScene() {
 	camera->setPosition(glm::vec3(0, 3, 3));
 	camera->setYaw(-84.0f);
 	camera->setPitch(23.8f);
+	//camera->setPitch(-10.0f);
 	//初始化云
 	initGUI();
 	bindCloudShader();
@@ -493,6 +512,7 @@ WaterScene::~WaterScene() {
 	}
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
+	//glDeleteTextures(1, &(wave.id));
 	glDeleteTextures(1, &(waterTexture.id));
 	glDeleteTextures(1, &(waterTexture1.id));
 	glDeleteTextures(1, &(waterTexture2.id));
@@ -512,6 +532,7 @@ void WaterScene::calculateAverageNormals(unsigned int* indices, unsigned int ind
 	int counter = 0;
 	for (size_t i = 0; i < indiceCount; i++)
 	{
+		//手工计算法线
 		unsigned int in0 = indices[i] * vLength;
 		unsigned int in1 = indices[i + 1] * vLength;
 		unsigned int in2 = indices[i + 2] * vLength;
@@ -664,8 +685,33 @@ void WaterScene::tick(float deltaT) {
 void WaterScene::render() {
 	
 	renderCloud();
-
 	renderWater();
+	//draw screen
+	auto& runtime = AppRuntime::getInstance();
+
+	int WIDTH = runtime.getWindowWidth();
+	int HEIGHT = runtime.getWindowHeight();
+
+
+	auto view = camera->getViewMatrix();
+	auto projection = glm::perspective(
+		glm::radians(camera->getFov()),
+		1.0f * runtime.getWindowWidth() / runtime.getWindowHeight(),
+		0.1f,
+		100.0f
+	);
+	paimonShader.use();
+	paimonShader.setMatrix4fv("projection", projection)
+		.setMatrix4fv("view", view);
+	for (auto it : this->actors) {
+
+		paimonShader.setMatrix4fv("model", it.second->getModelMatrix());
+		it.second->render(&paimonShader);
+	}
+
+	//render gui
+	vcgui->render();
+
 
 }
 void WaterScene::setGUI()
@@ -755,21 +801,72 @@ void WaterScene::renderCloud()
 	
 	glDepthFunc(GL_LEQUAL);
 
-	//draw screen
-	paimonShader.use();
-	paimonShader.setMatrix4fv("projection", projection)
-		.setMatrix4fv("view", view);
-	for (auto it : this->actors) {
 
-		paimonShader.setMatrix4fv("model", it.second->getModelMatrix());
-		it.second->render(&paimonShader);
-	}
-
-	//render gui
-	vcgui->render();
 }
 
 
+void WaterScene::drawWaterBlock(glm::vec3 position, glm::vec3 block_size,int offset,int big_scale)
+{
+	offset /= big_scale;
+	glm::mat4 model = glm::mat4(1.0);
+	model = glm::translate(model, position);
+	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model,block_size);
+	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+
+	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	waterTexture.UseTexture();
+	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[0]->RenderMesh();
+	//wave.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
+
+	glm::vec3 position2 = glm::vec3(position.x, position.y, position.z + offset);
+	model = glm::mat4(1.0);
+	model = glm::translate(model, position2);
+	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, block_size);
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	waterTexture1.UseTexture();
+	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[0]->RenderMesh();
+                                                                                                                 
+	////第2部分
+	//本应该-128
+	position = glm::vec3(position.x - 126.5/big_scale, position.y, position.z);
+	model = glm::mat4(1.0);
+
+	model = glm::translate(model, position);
+	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, block_size);
+	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+
+	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	waterTexture2.UseTexture();
+	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[0]->RenderMesh();
+	//wave.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
+
+	position2 = glm::vec3(position.x, position.y, position.z + offset);
+	model = glm::mat4(1.0);
+	model = glm::translate(model, position2);
+	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
+	model = glm::scale(model, block_size);
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	waterTexture3.UseTexture();
+	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[0]->RenderMesh();
+	//wave.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
+
+}
 void WaterScene::renderWater()
 {
 
@@ -785,57 +882,30 @@ void WaterScene::renderWater()
 	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
 	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 
-	glm::vec3 position = water_pos+glm::vec3(10.0f, -15.0f, 7.0f);
-	glm::mat4 model = glm::mat4(1.0);
+	glm::vec3 position1 = water_pos + glm::vec3(0.0f, -15.0f, 0.0f);
+	glm::vec3 position2 = water_pos + glm::vec3(0.0f, -15.0f, -88.0f);
+	glm::vec3 position3 = water_pos + glm::vec3(0.0f, -15.0f, 88.0f);
+	glm::vec3 position4 = water_pos + glm::vec3(-126.0f, -15.0f, 0.0f);
+	glm::vec3 position5 = water_pos + glm::vec3(126.0f, -15.0f, 0.0f);
+	glm::vec3 position6 = water_pos + glm::vec3(126.0f, -15.0f, -88.0f);
+	glm::vec3 position7 = water_pos + glm::vec3(126.0f, -15.0f, 88.0f);
+	glm::vec3 position8 = water_pos + glm::vec3(-126.0f, -15.0f, 88.0f);
+	glm::vec3 position9 = water_pos + glm::vec3(-126.0f, -15.0f, -88.0f);
+	glm::vec3 position10 = water_pos + glm::vec3(0.0f, -15.0f, 176.0f);
+	glm::vec3 position11 = water_pos + glm::vec3(126.0f, -15.0f, 176.0f);
+	glm::vec3 position12 = water_pos + glm::vec3(-126.0f, -15.0f, 176.0f);
 
-	model = glm::translate(model, position);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
-
-	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
-
-	const int offset = 88.5;
-	glm::vec3 position2 = glm::vec3(position.x, position.y, position.z + offset);
-	model = glm::mat4(1.0);
-	model = glm::translate(model, position2);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture1.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
-
-	//第2部分
-	position = water_pos + glm::vec3(10 - 126.5, -15.0f, 7.0f);
-	model = glm::mat4(1.0);
-
-	model = glm::translate(model, position);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
-
-	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture2.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
-
-	position2 = glm::vec3(position.x, position.y, position.z + offset);
-	model = glm::mat4(1.0);
-	model = glm::translate(model, position2);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture3.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	glm::vec3 block_size = glm::vec3(1.0f, 1.0f, 2.5f);
+	int offset = 88.5;
+	drawWaterBlock(position1, block_size, offset, 2);
+	drawWaterBlock(position2, block_size, offset, 2);
+	drawWaterBlock(position3, block_size, offset, 2);
+	drawWaterBlock(position4, block_size, offset, 2);
+	drawWaterBlock(position5, block_size, offset, 2);
+	drawWaterBlock(position6, block_size, offset, 2);
+	drawWaterBlock(position7, block_size, offset, 2);
+	drawWaterBlock(position8, block_size, offset, 2);
+	drawWaterBlock(position9, block_size, offset, 2);
 
 	glUseProgram(0);
 }

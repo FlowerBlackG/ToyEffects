@@ -22,6 +22,7 @@ struct Material
 };
 
 uniform sampler2D theTexture;
+//uniform sampler2D waveTexture;
 uniform DirectionalLight directionalLight;
 uniform Material material;
 
@@ -49,5 +50,7 @@ void main()
 		}
 	}
 
-	colour = texture(theTexture, TexCoord) * (ambientColour + diffuseColour + specularColour);
+	colour= texture(theTexture, TexCoord) * (ambientColour + diffuseColour + specularColour);
+	//vec4 colour2 = texture(wave, TexCoord) * (ambientColour + diffuseColour + specularColour);
+	//colour=mix(colour1,colour2,0.5);
 }
