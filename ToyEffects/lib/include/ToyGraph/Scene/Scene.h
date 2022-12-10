@@ -44,6 +44,10 @@ public:
      */
     virtual void activeKeyInputProcessor(GLFWwindow* window, float deltaT) {};
 
+    /*
+    * tyn 12/7:为每个场景添加更新GUI的函数
+    */
+    virtual void setGUI() {};
 public:
     class Camera* camera = nullptr;
 

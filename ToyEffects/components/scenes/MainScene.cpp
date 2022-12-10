@@ -4,7 +4,8 @@
 #include <ToyEffects/scenes/Skybox/PaimonScene.h>
 #include <ToyEffects/scenes/Skybox/NahidaScene.h>
 #include <ToyEffects/scenes/Skybox/WaterScene.h>
-
+#include <ToyEffects/scenes/Skybox/VCloudScene.h>
+#include <ToyEffects/scenes/Skybox/WaterCloudShadow.h>
 #include <vector>
 #include <string>
 
@@ -102,9 +103,19 @@ void MainScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
     }
     
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS
-        && runtime.lastFrameKeyStatus[GLFW_KEY_N] == GLFW_RELEASE
+        && runtime.lastFrameKeyStatus[GLFW_KEY_Z] == GLFW_RELEASE
         ) {
         SceneManager::getInstance().navigateTo(WaterScene::constructor);
+    }
+    if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS
+        && runtime.lastFrameKeyStatus[GLFW_KEY_V] == GLFW_RELEASE
+        ) {
+        SceneManager::getInstance().navigateTo(VCloudScene::constructor);
+    }
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS
+        && runtime.lastFrameKeyStatus[GLFW_KEY_M] == GLFW_RELEASE
+        ) {
+        SceneManager::getInstance().navigateTo(WaterCloudShadowScene::constructor);
     }
 
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS 

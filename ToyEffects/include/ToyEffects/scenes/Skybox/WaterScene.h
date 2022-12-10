@@ -1,63 +1,111 @@
-
+﻿
 #pragma once
 
 #include <ToyGraph/Scene/Scene.h>
 #include <ToyGraph/Skybox.h>
 #include <ToyGraph/Camera.h>
 #include <ToyGraph/Actor.h>
-//#include <ToyEffects/scenes/Skybox/gl4ext.h>
-//#include <ToyEffects/scenes/Skybox/terrainquadtree.h>
-
-//OpenGLMesh* oceanmesh = nullptr;
-//
-//OpenGLEffect* debugeffect = nullptr;
-//OpenGLEffect* updatespectrum = nullptr;
-//OpenGLEffect* fourier_dft = nullptr;	// bruteforce solution
-//OpenGLEffect* fourier_fft = nullptr;	// fast fourier transform
-//OpenGLEffect* createdisp = nullptr;	// displacement
-//OpenGLEffect* creategrad = nullptr;	// normal & jacobian
-//OpenGLEffect* oceaneffect = nullptr;
-//OpenGLEffect* wireeffect = nullptr;
-//OpenGLEffect* skyeffect = nullptr;
-//
-//OpenGLScreenQuad* screenquad = nullptr;
-//
-//TerrainQuadTree		tree;
+#include <ToyGraph/GUI.h>
+#include <stb_image.h>
 
 class WaterScene : public Scene {
 public:
-	//����
-	int cnt;		//�ݶ�
-	//����
-    ~WaterScene();
+	//初始化和删除
+	WaterScene();
+	~WaterScene();
+	static WaterScene* constructor() {
+		return new WaterScene;
+	}
+	virtual void render() override;
+	virtual void tick(float deltaT) override;
+	void cursorPosCallback(double xPos, double yPos) override;
+	void activeKeyInputProcessor(GLFWwindow* window, float deltaT) override;
 
-    static WaterScene* constructor() {
-        return new WaterScene;
-    }
+	//水函数
+	void initWater();
+	void renderWater();
+	void createStrip(int hVertices, int ​vVertices, float size);
+	void calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
+		unsigned int vLength, unsigned int normalOffset, int hVertices);
+	//云函数
+	void bindCloudShader();
+	void initCloud();
+	void renderCloud();
+	//模型
+	void initModel();
+	//天空盒
+	Skybox* pSkybox = nullptr;
+	//shader
+	Shader skyShader{
+	"shaders/VolumeCloud/sky.vert",
+	"shaders/VolumeCloud/sky.frag"
+	};
+	Shader postShader{
+		"shaders/VolumeCloud/tex.vert",
+		"shaders/VolumeCloud/tex.frag"
+	};
+	Shader paimonShader{
+	"shaders/shader.vert",
+	"shaders/shader.frag"
+	};
+	//模型
+	Model* paimonModel = nullptr;
 
-    virtual void render() override;
-    virtual void tick(float deltaT) override;
+	//水变量
+	glm::mat4 projection;
+	glm::vec3 water_pos=glm::vec3(0.0f, 3.0f, 0.0f);
+	//体积云变量
+	GLuint VBO, VAO;
+	//setup noise textures
+	GLuint curltex, worltex, perlworltex, weathertex;
+	const GLuint downscale = 1; //4 is best//any more and the gains dont make up for the lag
+	GLuint downscalesq = downscale * downscale;
+	int check;
+	GLfloat cloud_density = 0.5;
 
-    WaterScene();
+	glm::vec3 color_style = glm::vec3(0.8, 0.5, 0.8);
+	float timespeed = 60.0f;
 
-    void cursorPosCallback(double xPos, double yPos) override;
+	GUI* vcgui = nullptr;
+	virtual void setGUI()override;
+	void initGUI();
+};
 
-    void activeKeyInputProcessor(GLFWwindow* window, float deltaT) override;
-
-    bool InitScene();
-	void UninitScene();
-	//void GenerateLODLevels(OpenGLAttributeRange** subsettable, unsigned int* numsubsets, uint32_t* idata);
-	unsigned int GenerateBoundaryMesh(int deg_left, int deg_top, int deg_right, int deg_bottom, int levelsize, uint32_t* idata);
-    float Phillips(const glm::vec2& k, const glm::vec2& w, float V, float A);
+class WaterMesh :Mesh {
+protected:
+	unsigned int indexCount;
 
 
-    Skybox* pSkybox = nullptr;
+public:
+	WaterMesh();
+	void CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int numOfVertices, unsigned int numOfIndices);
+	void RenderMesh();
 
-    //����cube
-    Shader cube{
-        "shaders/cube.vs",
-        "shaders/cube.fs"
-    };
 
 };
 
+class WaterShader :Shader
+{
+public:
+	void read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryShaderFilePath);
+	void useWater();
+	GLuint getId();
+};
+
+class WaterTexture {
+
+	int width, height, bitDepth;
+	char* fileLocation;
+	/**
+	 * 纹理类型。如：specular, diffuse.
+	 */
+	TextureType type;
+	int RGB_type;
+
+public:
+	GLuint id;
+	void setfileLocation(char* s, int RGBtype);
+	void LoadTexture();
+	void UseTexture();
+	WaterTexture();
+};

@@ -92,7 +92,15 @@ public:
         float x, float y, float z,
         GLsizei count = 1
     ) const;
-
+    //乐 直接加在.h里了
+    const Shader& setVector2f(
+        const std::string& name, 
+        float x, float y,
+        GLsizei count = 1) const
+    {
+        glUniform2f(glGetUniformLocation(id, name.c_str()), x, y);
+        return *this;
+    }
 public:
 
     /**
@@ -119,3 +127,5 @@ protected:
      */
     GLuint id = 0;
 };
+
+

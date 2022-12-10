@@ -138,21 +138,41 @@
     <Library Include="lib\lib\ToyGraph.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="components\scenes\Light.cpp" />
     <ClCompile Include="components\scenes\MainScene.cpp" />
+    <ClCompile Include="components\scenes\Material.cpp" />
     <ClCompile Include="components\scenes\Skybox\NahidaScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\shared.cpp" />
+    <ClCompile Include="components\scenes\Skybox\VCloudScene.cpp" />
+    <ClCompile Include="components\scenes\Skybox\WaterCloudShadow.cpp" />
     <ClCompile Include="components\scenes\Skybox\WaterScene.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="lib\include\glm\detail\glm.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="imgui\imconfig.h" />
+    <ClInclude Include="imgui\imgui.h" />
+    <ClInclude Include="imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="imgui\imgui_internal.h" />
+    <ClInclude Include="imgui\imstb_rectpack.h" />
+    <ClInclude Include="imgui\imstb_textedit.h" />
+    <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="include\ToyEffects\CompilerOptions.h" />
     <ClInclude Include="include\ToyEffects\scenes\MainScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\3Dmath.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\NahidaScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\PaimonScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\shared.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\VCloudScene.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterCloudShadow.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterScene.h" />
     <ClInclude Include="lib\include\glad\glad.h" />
     <ClInclude Include="lib\include\GLFW\glfw3.h" />
@@ -447,6 +467,9 @@
     <ClInclude Include="lib\include\ToyGraph\AppRuntime.h" />
     <ClInclude Include="lib\include\ToyGraph\Camera.h" />
     <ClInclude Include="lib\include\ToyGraph\Engine.h" />
+    <ClInclude Include="lib\include\ToyGraph\GUI.h" />
+    <ClInclude Include="lib\include\ToyGraph\Light.h" />
+    <ClInclude Include="lib\include\ToyGraph\Material.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Mesh.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Model.h" />
     <ClInclude Include="lib\include\ToyGraph\Model\Texture.h" />
@@ -456,6 +479,8 @@
     <ClInclude Include="lib\include\ToyGraph\Skybox.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\shaders\skybox\skybox.frag" />
+    <None Include="..\shaders\skybox\skybox.vert" />
     <None Include="lib\include\glm\detail\func_common.inl" />
     <None Include="lib\include\glm\detail\func_common_simd.inl" />
     <None Include="lib\include\glm\detail\func_exponential.inl" />
@@ -592,6 +617,27 @@
     <None Include="lib\include\glm\gtx\vector_angle.inl" />
     <None Include="lib\include\glm\gtx\vector_query.inl" />
     <None Include="lib\include\glm\gtx\wrap.inl" />
+    <None Include="shaders\cube.fs" />
+    <None Include="shaders\cube.vs" />
+    <None Include="shaders\postprocess-screen-shader.frag" />
+    <None Include="shaders\postprocess-screen-shader.vert" />
+    <None Include="shaders\shader.frag" />
+    <None Include="shaders\shader.vert" />
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.fs" />
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.gs" />
+    <None Include="shaders\ShadowPointLight\pointShadowDepthMap.vs" />
+    <None Include="shaders\ShadowPointLight\pointShadows.fs" />
+    <None Include="shaders\ShadowPointLight\pointShadows.vs" />
+    <None Include="shaders\ShadowTest\debugQuad.vs" />
+    <None Include="shaders\ShadowTest\debugQuadDepth.fs" />
+    <None Include="shaders\ShadowTest\shadowDepthMap.fs" />
+    <None Include="shaders\ShadowTest\shadowDepthMap.vs" />
+    <None Include="shaders\ShadowTest\shadowMapping.fs" />
+    <None Include="shaders\ShadowTest\shadowMapping.vs" />
+    <None Include="shaders\VolumeCloud\sky.frag" />
+    <None Include="shaders\VolumeCloud\sky.vert" />
+    <None Include="shaders\VolumeCloud\tex.frag" />
+    <None Include="shaders\VolumeCloud\tex.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
