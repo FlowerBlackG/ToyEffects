@@ -72,7 +72,7 @@ float PCFShadow_poissonDisk(vec4 fragPosLightSpace,vec3 normal,vec3 lightDir)
     //shadow map大小
     float texSize=textureSize(shadowMap,0).x;
     //滤波的步长
-    float filterStride = 10.0;
+    float filterStride = 5.0;
     // 滤波窗口的范围
     float filterRange = 1.0 / texSize * filterStride;
     // 当前深度
@@ -165,7 +165,7 @@ float PCSSShadow_poissonDisk(vec4 fragPosLightSpace,vec3 normal,vec3 lightDir)
     float currentDepth = projCoords.z;
 
     //add bias to solve shadow acne(与采样方法也有关)
-    float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01); 
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
 
     float shadow =0.0;
     for( int i = 0; i < NUM_SAMPLES; i ++ ) {
