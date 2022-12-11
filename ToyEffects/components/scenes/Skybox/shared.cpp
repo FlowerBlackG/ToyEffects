@@ -7,10 +7,15 @@
 #include <ToyEffects/scenes/Skybox/VCloudScene.h>
 #include <ToyEffects/scenes/Skybox/shared.h>
 
+#include <iostream>
+using namespace std;
+
 static float lastX = 0;
 static float lastY = 0;
 static bool firstMouse = true;
 
+/** 是否禁用鼠标移动。 */
+static bool mouseMoveEnabled = true;
 
 void __nahidaPaimonSharedCursorPosCallback(double xPos, double yPos) {
     if (firstMouse) {
@@ -27,6 +32,10 @@ void __nahidaPaimonSharedCursorPosCallback(double xPos, double yPos) {
     float yOff = lastY - yPos; // reversed: y ranges bottom to top.
     lastX = xPos;
     lastY = yPos;
+
+    if (!mouseMoveEnabled) {
+        return;
+    }
 
     const float sensitivity = 0.1f;
     xOff *= sensitivity;
@@ -58,7 +67,7 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
         glfwSetWindowShouldClose(window, true);
     } 
 
-    float cameraSpeed = 2.5f * deltaTime;
+    float cameraSpeed = 6.0f * deltaTime;
     
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         
@@ -93,7 +102,7 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
     }
 
     if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS
-        && runtime.lastFrameKeyStatus[GLFW_KEY_P] == GLFW_RELEASE
+        && runtime.lastFrameKeyStatus[GLFW_KEY_V] == GLFW_RELEASE
         ) {
         SceneManager::getInstance().navigateTo(VCloudScene::constructor);
     }
@@ -116,4 +125,25 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
     ) {
         SceneManager::getInstance().navigateBack(); 
     }
+
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS
+        && glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS
+    ) {
+
+        mouseMoveEnabled = false;
+  
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS
+        && glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS
+        ) {
+
+        mouseMoveEnabled = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+       
+
+    }
+
 }

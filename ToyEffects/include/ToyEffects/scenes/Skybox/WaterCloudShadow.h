@@ -75,6 +75,7 @@ public:
 	void bindCloudShader();
 	void initCloud();
 	void renderCloud();
+	void initPostProcessKits();
 	//阴影函数	
 	void initDirLightShadow();//平行光阴影
 	void initPointLightShadow();//点光阴影
@@ -180,7 +181,19 @@ public:
 	GLuint cubeVBO, cubeVAO; //测试用自绘制物体
 	GLuint depthMapFBO, depthMapTex;//帧缓冲与深度图	
 	GLuint woodTex;//纹理
+	
+	// 后效。
+	int postProcessEffect = 0;
+	const int N_EFFECTS = 6;
+	Shader screenShader{
+		"shaders/postprocess-screen-shader.vert",
+		"shaders/postprocess-screen-shader.frag"
+	};
 
+	GLuint fbo = 0;
+	GLuint scrQuadVao;
+	GLuint scrQuadVbo;
+	GLuint textureColorbuffer;
 	
 	//GUI相关
 	GUI* vcgui = nullptr;

@@ -659,7 +659,7 @@ void WaterScene::createStrip(int hVertices, int ​vVertices, float size)
 
 //时刻改变位置，这里不需要
 void WaterScene::tick(float deltaT) {
-	printf("%5.2f fps\r", 1 / deltaT);
+	printf("%5.2f fps   \r", 1 / deltaT);
 }
 void WaterScene::render() {
 	

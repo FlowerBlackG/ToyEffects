@@ -84,6 +84,7 @@ uint32_t Log2OfPow2(uint32_t x);
 WaterCloudShadowScene::WaterCloudShadowScene()
 {
 	auto& app = AppRuntime::getInstance();
+
 	//天空盒
 	vector<string> skyboxFaces({
 		"assets/SkyBox/right3.jpg",
@@ -109,6 +110,61 @@ WaterCloudShadowScene::WaterCloudShadowScene()
 	initDirLightShadow();
 	//初始化导入的模型
 	initModel();
+
+	initPostProcessKits();
+}
+
+static const float SCR_QUAD_VERTICES[] = {
+	-1, 1, 0, 1,
+	-1, -1, 0, 0,
+	1, -1, 1, 0,
+
+	-1, 1, 0, 1,
+	1, -1, 1, 0,
+	1, 1, 1, 1
+};
+
+void WaterCloudShadowScene::initPostProcessKits() {
+	if (screenShader.errcode != ShaderError::SHADER_OK) {
+		cout << "screen shader err: " << screenShader.errmsg << endl;
+	}
+
+	// screen quad
+	glGenVertexArrays(1, &scrQuadVao);
+	glGenBuffers(1, &scrQuadVbo);
+	glBindVertexArray(scrQuadVao);
+	glBindBuffer(GL_ARRAY_BUFFER, scrQuadVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(SCR_QUAD_VERTICES), SCR_QUAD_VERTICES, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	screenShader.use();
+	screenShader.setInt("screenTexture", 0);
+
+	auto& app = AppRuntime::getInstance();
+	// framebuffer
+	// todo: 窗口尺寸改变时，重绘。
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	glGenTextures(1, &textureColorbuffer);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, app.getWindowWidth(), app.getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+	unsigned int rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, app.getWindowWidth(), app.getWindowHeight()); // use a single renderbuffer object for both a depth AND stencil buffer.
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+	// now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 WaterCloudShadowScene::~WaterCloudShadowScene()
@@ -133,7 +189,14 @@ WaterCloudShadowScene::~WaterCloudShadowScene()
 
 void WaterCloudShadowScene::render()
 {
+	
+
 	getDirLightShadowMap();//第一遍得到阴影图
+
+	// 启用后效帧缓冲。
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	pSkybox->render();//【移出】这个需要深度测试，且需要在画云之前，否则会把阴影场景弄没
 	renderCloud();   //画云
@@ -142,12 +205,25 @@ void WaterCloudShadowScene::render()
 
 	renderWater();    //画水
 
+	// 将后效帧缓冲绘制到屏幕缓冲。
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDisable(GL_DEPTH_TEST);
+
+	screenShader.use();
+	screenShader.setInt("effect", this->postProcessEffect);
+	glBindVertexArray(scrQuadVao);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glEnable(GL_DEPTH_TEST);
+
 	vcgui->render();//【移出】控制云的gui最后渲染，无需判断也不会被水和场景挡住
+
 }
 
 void WaterCloudShadowScene::tick(float deltaT)
 {
-	printf("%5.2f fps\r", 1 / deltaT);//输出FPS
+	// printf("%5.2f fps\r", 1 / deltaT);//输出FPS
 }
 
 void WaterCloudShadowScene::cursorPosCallback(double xPos, double yPos)
@@ -158,6 +234,32 @@ void WaterCloudShadowScene::cursorPosCallback(double xPos, double yPos)
 void WaterCloudShadowScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime)
 {
 	__nahidaPaimonSharedActiveKeyInputProcessor(window, deltaTime);
+
+	auto& runtime = AppRuntime::getInstance();
+	// 后效切换。
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS
+		&& runtime.lastFrameKeyStatus[GLFW_KEY_LEFT] == GLFW_RELEASE
+		) {
+		this->postProcessEffect--;
+		if (this->postProcessEffect < 0) {
+			this->postProcessEffect = this->N_EFFECTS - 1;
+		}
+
+
+		cout << "effect: " << this->postProcessEffect << endl;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS
+		&& runtime.lastFrameKeyStatus[GLFW_KEY_RIGHT] == GLFW_RELEASE
+		) {
+		this->postProcessEffect++;
+		if (this->postProcessEffect >= this->N_EFFECTS) {
+			this->postProcessEffect = 0;
+		}
+
+
+		cout << "effect: " << this->postProcessEffect << endl;
+	}
 }
 
 void WaterCloudShadowScene::drawCube()
