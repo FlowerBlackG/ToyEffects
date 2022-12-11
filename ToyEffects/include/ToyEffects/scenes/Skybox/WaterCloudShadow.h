@@ -68,6 +68,7 @@ public:
 	//水函数
 	void initWater();
 	void renderWater();
+	void drawWaterBlock(glm::vec3 position, glm::vec3 block_size, int offset, int big_scale);
 	void createStrip(int hVertices, int ​vVertices, float size);
 	void calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
 		unsigned int vLength, unsigned int normalOffset, int hVertices);
