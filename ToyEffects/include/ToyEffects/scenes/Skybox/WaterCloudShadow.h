@@ -124,8 +124,8 @@ public:
 	Model* paimonModel = nullptr;
 	Model* nahidaModel = nullptr;
 	Model* wood1Model = nullptr;
-	Model* deer1Model = nullptr,* deer2Model = nullptr;
-	Model* tree1Model = nullptr;
+	Model* deer1Model = nullptr, * deer2Model = nullptr, * deer3Model = nullptr;
+	Model* tree1Model = nullptr, * tree2Model = nullptr, * tree3Model = nullptr;
 	Model* house1Model = nullptr;
 	Model* building1Model = nullptr;
 

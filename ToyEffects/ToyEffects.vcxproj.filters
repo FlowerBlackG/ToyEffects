@@ -1554,5 +1554,8 @@
     <None Include="shaders\ShadowTest\shadowMapping.vs">
       <Filter>Source Files\shaders\shadow</Filter>
     </None>
+    <None Include="..\shaders\ocean\ocean.vert">
+      <Filter>Source Files\shaders\shadow</Filter>
+    </None>
   </ItemGroup>
 </Project>

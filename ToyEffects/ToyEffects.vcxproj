@@ -479,6 +479,7 @@
     <ClInclude Include="lib\include\ToyGraph\Skybox.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\shaders\ocean\ocean.vert" />
     <None Include="..\shaders\skybox\skybox.frag" />
     <None Include="..\shaders\skybox\skybox.vert" />
     <None Include="lib\include\glm\detail\func_common.inl" />
