@@ -132,6 +132,7 @@ public:
 	//水变量
 	glm::mat4 water_projection;
 	glm::vec3 water_pos = glm::vec3(0.0f, 3.0f, 0.0f);
+	glm::vec3 water_color_type = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	//改完fft再一并移入类——移进去先，不然全局变量复制场景麻烦啊
 	WaterTexture waterTexture;

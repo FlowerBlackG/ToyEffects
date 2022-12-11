@@ -464,7 +464,7 @@ void WaterCloudShadowScene::initWater()
 	waterMaterial = Material(1.0f, 64);
 	//光照 color:白 漫反射参数0.7 光源方向0.5*3
 	//mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, 0.5, 0.5f, 0.5f, 1.0f);
-	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, -5.5f, -0.5f, -0.5f, 1.0f);
+	mainLight = Light(water_color_type.x, water_color_type.y, water_color_type.z, 0.8f, -5.5f, -0.5f, -0.5f, 1.0f);
 
 	water_projection = glm::perspective(
 		glm::radians(camera->getFov()),
@@ -543,6 +543,7 @@ void WaterCloudShadowScene::drawWaterBlock(glm::vec3 position, glm::vec3 block_s
 
 void WaterCloudShadowScene::renderWater()
 {
+	mainLight.setLightColor(water_color_type);
 	shaderList[0].useWater();
 
 	NewWaterShader first = shaderList[0];
@@ -564,9 +565,9 @@ void WaterCloudShadowScene::renderWater()
 	glm::vec3 position7 = water_pos + glm::vec3(126.0f, -15.0f, 88.0f);
 	glm::vec3 position8 = water_pos + glm::vec3(-126.0f, -15.0f, 88.0f);
 	glm::vec3 position9 = water_pos + glm::vec3(-126.0f, -15.0f, -88.0f);
-	glm::vec3 position10 = water_pos + glm::vec3(0.0f, -15.0f, 176.0f);
-	glm::vec3 position11 = water_pos + glm::vec3(126.0f, -15.0f, 176.0f);
-	glm::vec3 position12 = water_pos + glm::vec3(-126.0f, -15.0f, 176.0f);
+	glm::vec3 position10 = water_pos + glm::vec3(0.0f, -15.0f, -176.0f);
+	glm::vec3 position11 = water_pos + glm::vec3(126.0f, -15.0f, -176.0f);
+	glm::vec3 position12 = water_pos + glm::vec3(-126.0f, -15.0f, -176.0f);
 
 	glm::vec3 block_size = glm::vec3(1.0f, 1.0f, 2.5f);
 	int offset = 88.5;
@@ -579,7 +580,10 @@ void WaterCloudShadowScene::renderWater()
 	drawWaterBlock(position7, block_size, offset, 2);
 	drawWaterBlock(position8, block_size, offset, 2);
 	drawWaterBlock(position9, block_size, offset, 2);
-
+	//不画了，地平线交接的问题不能通过铺远解决，反而降低性能
+	//drawWaterBlock(position10, block_size, offset, 2);
+	//drawWaterBlock(position11, block_size, offset, 2);
+	//drawWaterBlock(position12, block_size, offset, 2);
 	glUseProgram(0);
 }
 
@@ -1176,12 +1180,16 @@ void WaterCloudShadowScene::setGUI()
 	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Scene average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderFloat("cloud type", &cloud_density, 0.3f, 1.0f);
 	ImGui::ColorEdit3("cloud color", (float*)&(color_style));
-	ImGui::SliderFloat("cloud type", &timespeed, 20.0f, 100.0f);
+	ImGui::SliderFloat("timespeed", &timespeed, 20.0f, 100.0f);
 
 	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Light Control");
 	ImGui::Checkbox("dynamic light", &dirLight1_isMoving);
-	
-	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Shadow Type"); 
+
+	ImGui::TextColored(ImVec4(1, 1, 0, 1), "water control");
+	ImGui::ColorEdit3("water color", (float*)&(water_color_type));
+
+
+	ImGui::TextColored(ImVec4(1, 1, 0, 1), "shadow Type"); 
 	ImGui::RadioButton("pcf square sample ", &dirLight1_shadowType, PCF_SQUARESAMPLE); 
 	ImGui::RadioButton("pcf Poisson sample", &dirLight1_shadowType, PCF_POISSONSAMPLE);
 	ImGui::RadioButton("pcss Poisson sample", &dirLight1_shadowType, PCSS_POISSONSAMPLE);
