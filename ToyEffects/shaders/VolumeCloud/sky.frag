@@ -117,7 +117,7 @@ float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
 	return clamp(base_cloud, 0.0, 1.0);
 }
 
-#define Ambient  vec3(.7,.7,.7)    // 基础散射
+#define Ambient  vec3(.6,.6,.6)    // 基础散射
 
 vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	float T = 1.0;
@@ -173,6 +173,7 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	L = max(L,vec3(0.4,0.4,0.4)) * color_style;//vec3(0.8,0.5,0.8)
 	return vec4(L, alpha);
 }
+#define MIN_LIGHTNESS 0.95
 void main()
 {
 	vec2 shift = vec2(floor(float(check)/downscale), mod(float(check), downscale));	
@@ -200,7 +201,8 @@ void main()
 		vec3 raystep = dir*s_dist;
 		vec4 volume;//云层
 		//ray marching 获得云量和颜色
-		volume = march(start, end, raystep, int(steps));//好吧 降采样
+		//volume = march(start, end, raystep, int(steps));
+		volume = march(start, end, raystep*2, int(steps)/2);//降采样
 		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//云量控制在一定的范围
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);
@@ -214,7 +216,8 @@ void main()
 	} else {
 		col = vec4(vec3(0.0), 0.0);
 	}
-	
+	if(length(col.xyz)<MIN_LIGHTNESS)
+		col.xyz=col.xyz*(MIN_LIGHTNESS/length(col.xyz));
 	
 	color = col;
 }
