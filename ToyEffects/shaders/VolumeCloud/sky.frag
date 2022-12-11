@@ -45,6 +45,11 @@ vec3 U2Tone(const vec3 x) {
    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
+float HG(float costheta, float g) {
+	const float k = 0.0795774715459; 
+	return k*(1.0-g*g)/(pow(1.0+g*g-2.0*g*costheta, 1.5));
+}
+
 
 
 const vec3 RANDOM_VECTORS[6] = vec3[6]
@@ -117,7 +122,7 @@ float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
 	return clamp(base_cloud, 0.0, 1.0);
 }
 
-#define Ambient  vec3(.7,.7,.7)    // 基础散射
+#define Ambient  vec3(.6,.6,.6)    // 基础散射
 
 vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	float T = 1.0;
@@ -130,7 +135,8 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	vec3 L = vec3(0.0);
 	int count=0;
 	float t = 1.0;
-
+	float costheta = dot(normalize(ldir), normalize(dir));
+	float phase = max(max(HG(costheta, 0.6), HG(costheta, (0.99-1.3*normalize(ldir).y))), HG(costheta, -0.3));
 	for (int i=0;i<depth;i++) {
 		p += dir;
 		float height_fraction = GetHeightFractionForPoint(length(p));
@@ -162,9 +168,9 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 		float beers = max(exp(-ld*ncd*lss), exp(-ld*0.25*ncd*lss)*0.7);
 		float powshug = 1.0-exp(-ld*ncd*lss*2.0);
 
-		vec3 ambient = 4.0*Ambient*mix(0.15, 1.0, height_fraction);
+		vec3 ambient = 5.0*Ambient*mix(0.15, 1.0, height_fraction);
 		vec3 sunC = pow(vSunColor, vec3(0.75));
-		L += (ambient+sunC*beers*powshug*2.0)*(t)*T*ss;	
+		L += (ambient+sunC*beers*powshug*2.0*phase)*(t)*T*ss;	
 		
 		alpha += (1.0-dt)*(1.0-alpha);
 		}
@@ -173,6 +179,7 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	L = max(L,vec3(0.4,0.4,0.4)) * color_style;//vec3(0.8,0.5,0.8)
 	return vec4(L, alpha);
 }
+#define MIN_LIGHTNESS 0.95
 void main()
 {
 	vec2 shift = vec2(floor(float(check)/downscale), mod(float(check), downscale));	
@@ -186,6 +193,7 @@ void main()
 	//vec3 dir = normalize(worldPos.xyz/worldPos.w);
 	vec3 dir = normalize(worldPos.xyz/worldPos.w);
 	vec4 col = vec4(0.0);
+
 	if (dir.y>0.0) {
 	
 		vec3 camPos = cameraPos+vec3(0.0, g_radius, 0.0);
@@ -200,7 +208,8 @@ void main()
 		vec3 raystep = dir*s_dist;
 		vec4 volume;//云层
 		//ray marching 获得云量和颜色
-		volume = march(start, end, raystep, int(steps));//好吧 降采样
+		//volume = march(start, end, raystep, int(steps));
+		volume = march(start, end, raystep*2, int(steps)/2);//降采样
 		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//云量控制在一定的范围
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);
@@ -214,7 +223,8 @@ void main()
 	} else {
 		col = vec4(vec3(0.0), 0.0);
 	}
-	
+	if(length(col.xyz)<MIN_LIGHTNESS)
+		col.xyz=col.xyz*(MIN_LIGHTNESS/length(col.xyz));
 	
 	color = col;
 }

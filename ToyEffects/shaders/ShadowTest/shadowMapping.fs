@@ -19,7 +19,7 @@ uniform int shadowType;//见上面的宏定义
 uniform vec3 lightPos;
 uniform float lightWidth;//其实是平行光。。。
 uniform vec3 viewPos;
-
+uniform vec3 lightColor;
 
 //泊松圆盘随机采样
 #define NUM_RINGS 5 //环数
@@ -230,10 +230,10 @@ float ShadowCalculation(vec4 fragPosLightSpace,vec3 normal,vec3 lightDir)
 
 
 void main()
-{           
+{ 
     vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
     vec3 normal = normalize(fs_in.Normal);
-    vec3 lightColor = vec3(1.0);
+    //vec3 lightColor = vec3(255.0f/255.0f,144.0f/256.0f,0);
     // ambient
     vec3 ambient = 0.4 * lightColor;
     // diffuse

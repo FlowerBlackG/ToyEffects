@@ -124,8 +124,8 @@ public:
 	Model* paimonModel = nullptr;
 	Model* nahidaModel = nullptr;
 	Model* wood1Model = nullptr;
-	Model* deer1Model = nullptr,* deer2Model = nullptr;
-	Model* tree1Model = nullptr;
+	Model* deer1Model = nullptr, * deer2Model = nullptr, * deer3Model = nullptr;
+	Model* tree1Model = nullptr, * tree2Model = nullptr, * tree3Model = nullptr;
 	Model* house1Model = nullptr;
 	Model* building1Model = nullptr;
 
@@ -159,7 +159,7 @@ public:
 	int check;
 	GLfloat cloud_density = 0.5;
 
-	glm::vec3 color_style = glm::vec3(0.8, 0.5, 0.8);
+	glm::vec3 color_style = glm::vec3(0.9, 0.6, 0.9);
 	float timespeed = 60.0f;
 
 	//阴影与光源相关
