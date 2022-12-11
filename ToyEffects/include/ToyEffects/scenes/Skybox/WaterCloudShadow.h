@@ -166,7 +166,7 @@ public:
 	/*阴影贴图分辨率，随着灯光正交投影矩阵变大
 	（也就是要阴影的范围变大，为保证质量，这个值）
 	需要更大，但是会卡*/
-	const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
+	const unsigned int SHADOW_WIDTH = 5120, SHADOW_HEIGHT = 5120;
 
 	glm::mat4 lightSpaceMatrix;//平行光源视角空间相关
 

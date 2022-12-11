@@ -1207,7 +1207,7 @@ void WaterCloudShadowScene::setGUI()
 	ImGui::RadioButton("pcf Poisson sample", &dirLight1_shadowType, PCF_POISSONSAMPLE);
 	ImGui::RadioButton("pcss Poisson sample", &dirLight1_shadowType, PCSS_POISSONSAMPLE);
 	if(dirLight1_shadowType==PCSS_POISSONSAMPLE)
-		ImGui::SliderFloat("pcss light width", &dirLight1_width, 0.01f, 10.0f);
+		ImGui::SliderFloat("pcss light width", &dirLight1_width, 0.01f, 5.0f);
 }
 
 void WaterCloudShadowScene::initGUI()
