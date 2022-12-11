@@ -179,7 +179,7 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	L = max(L,vec3(0.4,0.4,0.4)) * color_style;//vec3(0.8,0.5,0.8)
 	return vec4(L, alpha);
 }
-#define MIN_LIGHTNESS 0.95
+#define MIN_LIGHTNESS 0.8
 void main()
 {
 	vec2 shift = vec2(floor(float(check)/downscale), mod(float(check), downscale));	
@@ -209,7 +209,7 @@ void main()
 		vec4 volume;//云层
 		//ray marching 获得云量和颜色
 		//volume = march(start, end, raystep, int(steps));
-		volume = march(start, end, raystep*2, int(steps)/2);//降采样
+		volume = march(start, end, raystep*3, int(steps)/3);//降采样
 		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//云量控制在一定的范围
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);
