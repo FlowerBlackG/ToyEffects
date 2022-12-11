@@ -170,7 +170,7 @@ public:
 
 	glm::mat4 lightSpaceMatrix;//平行光源视角空间相关
 
-	glm::vec3 dirLight1_pos = glm::vec3(-3.0f, 5.0f, -3.0f);//【正交投影这个足够了】
+	glm::vec3 dirLight1_pos = glm::vec3(-3.0f, 8.0f, 6.0f);//【正交投影这个足够了】
 	float dirLight1_width = 1.0f;//按理平行光就没有宽度，也没有半影，但是为了用上PCSS。。。
 	int dirLight1_shadowType = PCSS_POISSONSAMPLE;
 	bool dirLight1_isMoving = true;
