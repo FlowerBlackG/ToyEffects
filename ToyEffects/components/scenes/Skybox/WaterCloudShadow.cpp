@@ -17,7 +17,7 @@ using namespace std;
 
 #define PNG_RGBA 0
 #define JPG_RGB 1
-
+#define CARACTOR_ID 1000
 ////fft数学常量
 //static const float PI = 3.141592f;
 //static const float ONE_OVER_SQRT_2 = 0.7071067f;	//根号2分之1
@@ -207,7 +207,7 @@ void WaterCloudShadowScene::render()
 	renderWater();    //画水
 
 	glm::vec3 p=camera->getPosition();
-	cout << "相机" << p.x << ' ' << p.y << ' ' << p.z << endl;
+	//cout << "相机" << p.x << ' ' << p.y << ' ' << p.z << endl;
 	// 将后效帧缓冲绘制到屏幕缓冲。
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
@@ -404,8 +404,14 @@ void WaterCloudShadowScene::renderModels(Shader& shader, const glm::mat4 project
 		
 		//curModelMat = glm::translate(curModelMat, glm::vec3(0, static_cast<float>(sin(glfwGetTime() * 0.5) * 3.0),0 ));
 		curModelMat = glm::translate(curModelMat, glm::vec3(0, 0, 0));
-
+		
 		shader.setMatrix4fv("model", curModelMat);
+		if (it.first==CARACTOR_ID|| it.first == CARACTOR_ID+1) {
+			shader.setVector3f("lightColor", glm::vec3(255.0f / 255.0f, 214.0f / 256.0f, 220 / 256.0f));
+		}
+		else {
+			shader.setVector3f("lightColor", glm::vec3(255.0f / 255.0f, 200.0f / 256.0f, 190 / 256.0f));
+		}
 		it.second->render(&shader);
 	}
 }
@@ -1072,9 +1078,6 @@ void WaterCloudShadowScene::getDirLightShadowMap()
 	renderModels(simpleDepthShader,projection,view);
 
 
-	
-
-
 	/*for (auto it : this->actors) {
 		it.second->render(&simpleDepthShader);
 	}*/
@@ -1097,8 +1100,8 @@ void WaterCloudShadowScene::initModel()
 	paimon->setScale(glm::vec3(0.2));
 	paimon->setYaw(45.0f);
 	paimon->setRoll(10.0f);
-	paimon->setPosition(glm::vec3(0.0f, -10.0f, 0.5f));
-	this->addActor(paimon);
+	paimon->setPosition(glm::vec3(-1.0f, -10.0f, 5.0f));
+	this->addActor(paimon, CARACTOR_ID);
 	paimonModel = new Model("assets/genshin-impact/paimon/paimon.pmx");
 	paimon->bindModel(paimonModel);
 
@@ -1108,7 +1111,7 @@ void WaterCloudShadowScene::initModel()
 	nahida->setYaw(-5.0f);
 	nahida->setRoll(2.0f);
 	nahida->setPosition(glm::vec3(2.0f, -10.0f, 2.0f));
-	this->addActor(nahida);
+	this->addActor(nahida, CARACTOR_ID+1);
 	nahidaModel = new Model("assets/genshin-impact/nahida/nahida.pmx");
 	nahida->bindModel(nahidaModel);
 
@@ -1123,12 +1126,12 @@ void WaterCloudShadowScene::initModel()
 	wood1->bindModel(wood1Model);
 
 	//树
-	Actor* tree1 = new Actor;
-	tree1->setScale(glm::vec3(0.5));
-	tree1->setPosition(glm::vec3(0.0f, -10.0f, -12.0f));
-	this->addActor(tree1);
-	tree1Model = new Model("assets/SceneModels/tree1/trees9.obj");
-	tree1->bindModel(tree1Model);
+	//Actor* tree1 = new Actor;
+	//tree1->setScale(glm::vec3(0.5));
+	//tree1->setPosition(glm::vec3(0.0f, -10.0f, -12.0f));
+	//this->addActor(tree1 );
+	//tree1Model = new Model("assets/SceneModels/tree1/trees9.obj");
+	//tree1->bindModel(tree1Model);
 
 	Actor* tree2 = new Actor;
 	tree2->setScale(glm::vec3(0.4));
@@ -1138,13 +1141,13 @@ void WaterCloudShadowScene::initModel()
 	tree2Model = new Model("assets/SceneModels/tree1/trees9.obj");
 	tree2->bindModel(tree2Model);
 
-	Actor* tree3 = new Actor;
+	/*Actor* tree3 = new Actor;
 	tree3->setScale(glm::vec3(0.4));
 	tree3->setYaw(-165.0f);
 	tree3->setPosition(glm::vec3(5.0f, -10.0f, 18.0f));
 	this->addActor(tree3);
 	tree3Model = new Model("assets/SceneModels/tree1/trees9.obj");
-	tree3->bindModel(tree3Model);
+	tree3->bindModel(tree3Model);*/
 
 	//鹿
 	Actor* deer1 = new Actor;

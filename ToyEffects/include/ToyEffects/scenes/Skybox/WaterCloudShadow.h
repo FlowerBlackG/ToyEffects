@@ -159,7 +159,7 @@ public:
 	int check;
 	GLfloat cloud_density = 0.5;
 
-	glm::vec3 color_style = glm::vec3(0.8, 0.5, 0.8);
+	glm::vec3 color_style = glm::vec3(0.9, 0.6, 0.9);
 	float timespeed = 60.0f;
 
 	//阴影与光源相关

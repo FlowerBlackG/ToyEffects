@@ -45,6 +45,11 @@ vec3 U2Tone(const vec3 x) {
    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
+float HG(float costheta, float g) {
+	const float k = 0.0795774715459; 
+	return k*(1.0-g*g)/(pow(1.0+g*g-2.0*g*costheta, 1.5));
+}
+
 
 
 const vec3 RANDOM_VECTORS[6] = vec3[6]
@@ -130,7 +135,8 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	vec3 L = vec3(0.0);
 	int count=0;
 	float t = 1.0;
-
+	float costheta = dot(normalize(ldir), normalize(dir));
+	float phase = max(max(HG(costheta, 0.6), HG(costheta, (0.99-1.3*normalize(ldir).y))), HG(costheta, -0.3));
 	for (int i=0;i<depth;i++) {
 		p += dir;
 		float height_fraction = GetHeightFractionForPoint(length(p));
@@ -162,9 +168,9 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 		float beers = max(exp(-ld*ncd*lss), exp(-ld*0.25*ncd*lss)*0.7);
 		float powshug = 1.0-exp(-ld*ncd*lss*2.0);
 
-		vec3 ambient = 4.0*Ambient*mix(0.15, 1.0, height_fraction);
+		vec3 ambient = 5.0*Ambient*mix(0.15, 1.0, height_fraction);
 		vec3 sunC = pow(vSunColor, vec3(0.75));
-		L += (ambient+sunC*beers*powshug*2.0)*(t)*T*ss;	
+		L += (ambient+sunC*beers*powshug*2.0*phase)*(t)*T*ss;	
 		
 		alpha += (1.0-dt)*(1.0-alpha);
 		}
@@ -187,6 +193,7 @@ void main()
 	//vec3 dir = normalize(worldPos.xyz/worldPos.w);
 	vec3 dir = normalize(worldPos.xyz/worldPos.w);
 	vec4 col = vec4(0.0);
+
 	if (dir.y>0.0) {
 	
 		vec3 camPos = cameraPos+vec3(0.0, g_radius, 0.0);
