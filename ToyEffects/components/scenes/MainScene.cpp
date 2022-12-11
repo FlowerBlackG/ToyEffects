@@ -8,6 +8,7 @@
 #include <ToyEffects/scenes/Skybox/WaterCloudShadow.h>
 #include <vector>
 #include <string>
+#include <ToyEffects/scenes/Skybox/DOF.h>
 
 using namespace std;
 
@@ -122,6 +123,12 @@ void MainScene::activeKeyInputProcessor(GLFWwindow* window, float deltaTime) {
         && runtime.lastFrameKeyStatus[GLFW_KEY_B] == GLFW_RELEASE
     ) {
         SceneManager::getInstance().navigateBack(); 
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS
+        && runtime.lastFrameKeyStatus[GLFW_KEY_F] == GLFW_RELEASE
+        ) {
+        SceneManager::getInstance().navigateTo(DOF::constructor);
     }
 
     

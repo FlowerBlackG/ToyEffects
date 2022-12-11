@@ -113,6 +113,9 @@
     <ClCompile Include="components\scenes\Skybox\WaterCloudShadow.cpp">
       <Filter>Source Files\components\scenes\Skybox</Filter>
     </ClCompile>
+    <ClCompile Include="components\scenes\Skybox\DOF.cpp">
+      <Filter>Source Files\components\scenes\Skybox</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ToyEffects\CompilerOptions.h">
@@ -1075,6 +1078,9 @@
     <ClInclude Include="include\ToyEffects\scenes\Skybox\WaterCloudShadow.h">
       <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
     </ClInclude>
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\DOF.h">
+      <Filter>Header Files\ToyEffects\scenes\Skybox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="lib\include\glm\detail\func_common.inl">
@@ -1553,6 +1559,18 @@
     </None>
     <None Include="shaders\ShadowTest\shadowMapping.vs">
       <Filter>Source Files\shaders\shadow</Filter>
+    </None>
+    <None Include="shaders\DOFshader.frag">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\DOFshader.vert">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\DOFshaderSecond.frag">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\DOFshaderSecond.vert">
+      <Filter>Source Files\shaders</Filter>
     </None>
   </ItemGroup>
 </Project>
