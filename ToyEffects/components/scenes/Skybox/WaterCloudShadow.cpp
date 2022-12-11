@@ -1140,7 +1140,7 @@ void WaterCloudShadowScene::setGUI()
 	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Scene average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderFloat("cloud type", &cloud_density, 0.3f, 1.0f);
 	ImGui::ColorEdit3("cloud color", (float*)&(color_style));
-	ImGui::SliderFloat("cloud type", &timespeed, 20.0f, 100.0f);
+	ImGui::SliderFloat("time speed", &timespeed, 20.0f, 100.0f);
 
 	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Light Control");
 	ImGui::Checkbox("dynamic light", &dirLight1_isMoving);

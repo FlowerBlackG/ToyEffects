@@ -235,10 +235,10 @@ void main()
     vec3 normal = normalize(fs_in.Normal);
     vec3 lightColor = vec3(1.0);
     // ambient
-    vec3 ambient = 0.3 * lightColor;
+    vec3 ambient = 0.4 * lightColor;
     // diffuse
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
-    float diff = max(dot(lightDir, normal), 0.0);
+    float diff = max(dot(lightDir, normal), 0.4);
     vec3 diffuse = diff * lightColor;
     // specular
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
@@ -257,6 +257,9 @@ void main()
         shadow =PCSSShadow_poissonDisk(fs_in.FragPosLightSpace,normal,lightDir);   
 
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
-    
+    float ll=length(lighting);
+    if(ll>2.8)
+        lighting=lighting*2.8/ll;
+
     FragColor = vec4(lighting, 1.0);
 }
