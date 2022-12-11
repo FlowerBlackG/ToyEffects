@@ -122,7 +122,7 @@ float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
 	return clamp(base_cloud, 0.0, 1.0);
 }
 
-#define Ambient  vec3(.6,.6,.6)    // »ù´¡É¢Éä
+#define Ambient  vec3(.7,.7,.7)    // »ù´¡É¢Éä
 
 vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	float T = 1.0;
