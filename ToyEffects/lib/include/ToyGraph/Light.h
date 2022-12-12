@@ -21,7 +21,9 @@ public:
 
 	~Light();
 
-private:
+	void setLightColor(glm::vec3 newcolor);
+
+protected:
 	glm::vec3 color;
 	GLfloat ambientIntensity;
 

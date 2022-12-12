@@ -10,12 +10,27 @@
 #include <iostream>
 using namespace std;
 
+#define WATER_Y -8.0f
+
 static float lastX = 0;
 static float lastY = 0;
 static bool firstMouse = true;
 
 /** 是否禁用鼠标移动。 */
 static bool mouseMoveEnabled = true;
+
+bool JudgeAboveWater(float pos_y)
+{
+
+    //限制位置 10,判断是否在水下
+    bool above_sea = false;
+
+    if (pos_y > WATER_Y)
+        above_sea = 1;
+    else
+        above_sea = 0;
+    return above_sea;
+}
 
 void __nahidaPaimonSharedCursorPosCallback(double xPos, double yPos) {
     if (firstMouse) {
@@ -72,19 +87,28 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         
         camera.move(cameraSpeed, camera.getDirectionVectorFront());
+        if (!JudgeAboveWater(camera.getPosition().y))
+            camera.move(-cameraSpeed, camera.getDirectionVectorFront());
     } 
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         
         camera.move(-cameraSpeed, camera.getDirectionVectorFront());
+        if (!JudgeAboveWater(camera.getPosition().y))
+            camera.move(cameraSpeed, camera.getDirectionVectorFront());
     }
 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         camera.move(-cameraSpeed, camera.getDirectionVectorRight());
+        if (!JudgeAboveWater(camera.getPosition().y))
+            camera.move(cameraSpeed, camera.getDirectionVectorRight());
     }
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         camera.move(cameraSpeed, camera.getDirectionVectorRight());
+
+        if (!JudgeAboveWater(camera.getPosition().y))
+            camera.move(-cameraSpeed, camera.getDirectionVectorRight());
     }
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {

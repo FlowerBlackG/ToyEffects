@@ -5,6 +5,7 @@
 #include <ToyGraph/Skybox.h>
 #include <ToyGraph/Camera.h>
 #include <ToyGraph/Actor.h>
+#include <ToyGraph/Light.h>
 #include <ToyGraph/GUI.h>
 #include <stb_image.h>
 

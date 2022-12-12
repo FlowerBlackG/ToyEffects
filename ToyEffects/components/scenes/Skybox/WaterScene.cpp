@@ -81,6 +81,8 @@ GLenum glCheckError_(const char* file, int line)
 }
 #define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
+
+
 WaterMesh::WaterMesh()
 {
 	indexCount = 0;
@@ -438,7 +440,7 @@ void WaterScene::initWater()
 	);
 	//shader
 	WaterShader ocean;
-	ocean.read("../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
+	ocean.read("../shaders/ocean/ocean.vert", "../shaders/ocean/ocean.frag", "../shaders/ocean/ocean.geom");
 	shaderList.push_back(ocean);
 
 }
@@ -663,7 +665,7 @@ void WaterScene::tick(float deltaT) {
 }
 void WaterScene::render() {
 	
-	renderCloud();
+	//renderCloud();
 
 	renderWater();
 
@@ -777,7 +779,7 @@ void WaterScene::renderWater()
 
 	WaterShader first = shaderList[0];
 	glUseProgram(first.getId());
-	glUniform1f(uniformUvScroll, glfwGetTime() / 5);
+	glUniform1f(uniformUvScroll, glfwGetTime() / 5.0);
 
 	mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
 
@@ -790,7 +792,7 @@ void WaterScene::renderWater()
 
 	model = glm::translate(model, position);
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	model = glm::scale(model, glm::vec3(0.5f, 0.5f, 1.25f));
 	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
 	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
@@ -799,43 +801,43 @@ void WaterScene::renderWater()
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();
 
-	const int offset = 88.5;
-	glm::vec3 position2 = glm::vec3(position.x, position.y, position.z + offset);
-	model = glm::mat4(1.0);
-	model = glm::translate(model, position2);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture1.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	//const int offset = 88.5;
+	//glm::vec3 position2 = glm::vec3(position.x, position.y, position.z + offset);
+	//model = glm::mat4(1.0);
+	//model = glm::translate(model, position2);
+	//model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	////model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
+	//model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	//glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	//waterTexture1.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
 
-	//第2部分
-	position = water_pos + glm::vec3(10 - 126.5, -15.0f, 7.0f);
-	model = glm::mat4(1.0);
+	////第2部分
+	//position = water_pos + glm::vec3(10 - 126.5, -15.0f, 7.0f);
+	//model = glm::mat4(1.0);
 
-	model = glm::translate(model, position);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+	//model = glm::translate(model, position);
+	//model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	//model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	////model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
-	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture2.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	////位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
+	//glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	//waterTexture2.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
 
-	position2 = glm::vec3(position.x, position.y, position.z + offset);
-	model = glm::mat4(1.0);
-	model = glm::translate(model, position2);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	waterTexture3.UseTexture();
-	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();
+	//position2 = glm::vec3(position.x, position.y, position.z + offset);
+	//model = glm::mat4(1.0);
+	//model = glm::translate(model, position2);
+	//model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	////model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
+	//model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	//glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	//waterTexture3.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
 
 	glUseProgram(0);
 }

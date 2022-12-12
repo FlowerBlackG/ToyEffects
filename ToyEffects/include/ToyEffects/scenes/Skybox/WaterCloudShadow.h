@@ -68,6 +68,7 @@ public:
 	//水函数
 	void initWater();
 	void renderWater();
+	void drawWaterBlock(glm::vec3 position, glm::vec3 block_size, int offset, int big_scale);
 	void createStrip(int hVertices, int ​vVertices, float size);
 	void calculateAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
 		unsigned int vLength, unsigned int normalOffset, int hVertices);
@@ -123,14 +124,15 @@ public:
 	Model* paimonModel = nullptr;
 	Model* nahidaModel = nullptr;
 	Model* wood1Model = nullptr;
-	Model* deer1Model = nullptr,* deer2Model = nullptr;
-	Model* tree1Model = nullptr;
+	Model* deer1Model = nullptr, * deer2Model = nullptr, * deer3Model = nullptr;
+	Model* tree1Model = nullptr, * tree2Model = nullptr, * tree3Model = nullptr;
 	Model* house1Model = nullptr;
 	Model* building1Model = nullptr;
 
 	//水变量
 	glm::mat4 water_projection;
 	glm::vec3 water_pos = glm::vec3(0.0f, 3.0f, 0.0f);
+	glm::vec3 water_color_type = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	//改完fft再一并移入类——移进去先，不然全局变量复制场景麻烦啊
 	WaterTexture waterTexture;
@@ -157,14 +159,14 @@ public:
 	int check;
 	GLfloat cloud_density = 0.5;
 
-	glm::vec3 color_style = glm::vec3(0.8, 0.5, 0.8);
+	glm::vec3 color_style = glm::vec3(0.95, 0.75, 0.95);
 	float timespeed = 60.0f;
 
 	//阴影与光源相关
 	/*阴影贴图分辨率，随着灯光正交投影矩阵变大
 	（也就是要阴影的范围变大，为保证质量，这个值）
 	需要更大，但是会卡*/
-	const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
+	const unsigned int SHADOW_WIDTH = 5120, SHADOW_HEIGHT = 5120;
 
 	glm::mat4 lightSpaceMatrix;//平行光源视角空间相关
 

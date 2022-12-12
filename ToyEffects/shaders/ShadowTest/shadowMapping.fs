@@ -19,7 +19,7 @@ uniform int shadowType;//见上面的宏定义
 uniform vec3 lightPos;
 uniform float lightWidth;//其实是平行光。。。
 uniform vec3 viewPos;
-
+uniform vec3 lightColor;
 
 //泊松圆盘随机采样
 #define NUM_RINGS 5 //环数
@@ -79,7 +79,7 @@ float PCFShadow_poissonDisk(vec4 fragPosLightSpace,vec3 normal,vec3 lightDir)
     float currentDepth = projCoords.z;
 
     //add bias to solve shadow acne(与采样方法也有关)
-    float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01); 
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
 
     float shadow =0.0;
     for( int i = 0; i < NUM_SAMPLES; i ++ ) {
@@ -106,7 +106,7 @@ float getBlockDepth(vec3 projCoords,vec3 normal,vec3 lightDir)
 
 
     // 滤波窗口的范围
-    float filterStride= 50.0;
+    float filterStride= 20.0;
     
 
     //shadow map大小
@@ -118,7 +118,7 @@ float getBlockDepth(vec3 projCoords,vec3 normal,vec3 lightDir)
     poissonDiskSamples(projCoords.xy);
 
     //add bias to solve shadow acne(与采样方法也有关)
-    float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01); 
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
     
     for(int i=0;i<NUM_SAMPLES;i++)
     {
@@ -158,14 +158,14 @@ float PCSSShadow_poissonDisk(vec4 fragPosLightSpace,vec3 normal,vec3 lightDir)
     //shadow map大小
     float texSize=textureSize(shadowMap,0).x;
     //滤波的步长
-    float filterStride = 20.0;
+    float filterStride = 10.0;
     // 滤波窗口的范围
     float filterRange = 1.0 / texSize * filterStride;
     // 当前深度
     float currentDepth = projCoords.z;
 
     //add bias to solve shadow acne(与采样方法也有关)
-    float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01); 
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
 
     float shadow =0.0;
     for( int i = 0; i < NUM_SAMPLES; i ++ ) {
@@ -230,10 +230,10 @@ float ShadowCalculation(vec4 fragPosLightSpace,vec3 normal,vec3 lightDir)
 
 
 void main()
-{           
+{ 
     vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
     vec3 normal = normalize(fs_in.Normal);
-    vec3 lightColor = vec3(1.0);
+    //vec3 lightColor = vec3(255.0f/255.0f,144.0f/256.0f,0);
     // ambient
     vec3 ambient = 0.4 * lightColor;
     // diffuse
@@ -257,6 +257,7 @@ void main()
         shadow =PCSSShadow_poissonDisk(fs_in.FragPosLightSpace,normal,lightDir);   
 
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
+ 
     float ll=length(lighting);
     if(ll>2.8)
         lighting=lighting*2.8/ll;

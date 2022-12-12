@@ -17,7 +17,7 @@ using namespace std;
 
 #define PNG_RGBA 0
 #define JPG_RGB 1
-
+#define CARACTOR_ID 1000
 ////fft数学常量
 //static const float PI = 3.141592f;
 //static const float ONE_OVER_SQRT_2 = 0.7071067f;	//根号2分之1
@@ -97,9 +97,9 @@ WaterCloudShadowScene::WaterCloudShadowScene()
 	pSkybox = new Skybox(skyboxFaces);
 	//摄像机
 	camera = SceneManager::getInstance().currentScene()->camera;
-	camera->setPosition(glm::vec3(0, -5, 3));
+	camera->setPosition(glm::vec3(3.3f, -7.27f, 16.83f));
 	camera->setYaw(-84.0f);
-	camera->setPitch(23.8f);
+	camera->setPitch(10.8f);
 	//初始化云
 	initGUI();
 	bindCloudShader();
@@ -203,8 +203,11 @@ void WaterCloudShadowScene::render()
 	
 	renderSceneWithShadows();//第二遍画阴影（云是没有阴影的）
 
+
 	renderWater();    //画水
 
+	glm::vec3 p=camera->getPosition();
+	//cout << "相机" << p.x << ' ' << p.y << ' ' << p.z << endl;
 	// 将后效帧缓冲绘制到屏幕缓冲。
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
@@ -339,18 +342,18 @@ void WaterCloudShadowScene::renderObjects( Shader& shader, const glm::mat4 proje
 	
 	// floor
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f,-10.0f,0.0f));
+	model = glm::translate(model, glm::vec3(0.0f,-9.7f,0.0f));
 	model = glm::scale(model, glm::vec3(0.5f, 1.0f, 0.5f));
 	shader.setMatrix4fv("model", model);
 	glBindVertexArray(planeVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	// wall
 	//glDisable(GL_CULL_FACE);
-	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(5.0f, -10.0f, 5.0f));
-	model = glm::scale(model, glm::vec3(0.1f,5.0f,5.1f));
-	shader.setMatrix4fv("model", model);
-	drawCube();
+	//model = glm::mat4(1.0f);
+	//model = glm::translate(model, glm::vec3(5.0f, -10.0f, 5.0f));
+	//model = glm::scale(model, glm::vec3(0.1f,5.0f,5.1f));
+	//shader.setMatrix4fv("model", model);
+	//drawCube();
 	//glEnable(GL_CULL_FACE);
 	// cubes
 	model = glm::mat4(1.0f);
@@ -399,9 +402,16 @@ void WaterCloudShadowScene::renderModels(Shader& shader, const glm::mat4 project
 	for (auto it : this->actors) {
 		glm::mat4 curModelMat = it.second->getModelMatrix();
 		
-		curModelMat = glm::translate(curModelMat, glm::vec3(0, static_cast<float>(sin(glfwGetTime() * 0.5) * 3.0),0 ));
-
+		//curModelMat = glm::translate(curModelMat, glm::vec3(0, static_cast<float>(sin(glfwGetTime() * 0.5) * 3.0),0 ));
+		curModelMat = glm::translate(curModelMat, glm::vec3(0, 0, 0));
+		
 		shader.setMatrix4fv("model", curModelMat);
+		if (it.first==CARACTOR_ID|| it.first == CARACTOR_ID+1) {
+			shader.setVector3f("lightColor", glm::vec3(255.0f / 255.0f, 214.0f / 256.0f, 220 / 256.0f));
+		}
+		else {
+			shader.setVector3f("lightColor", glm::vec3(255.0f / 255.0f, 200.0f / 256.0f, 190 / 256.0f));
+		}
 		it.second->render(&shader);
 	}
 }
@@ -464,7 +474,7 @@ void WaterCloudShadowScene::initWater()
 	waterMaterial = Material(1.0f, 64);
 	//光照 color:白 漫反射参数0.7 光源方向0.5*3
 	//mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, 0.5, 0.5f, 0.5f, 1.0f);
-	mainLight = Light(1.0f, 1.0f, 1.0f, 0.7f, -5.5f, -0.5f, -0.5f, 1.0f);
+	mainLight = Light(water_color_type.x, water_color_type.y, water_color_type.z, 0.8f, -5.5f, -0.5f, -0.5f, 1.0f);
 
 	water_projection = glm::perspective(
 		glm::radians(camera->getFov()),
@@ -474,30 +484,16 @@ void WaterCloudShadowScene::initWater()
 	);
 	//shader
 	NewWaterShader ocean;
-	ocean.read(this ,"../shaders/ocean/ocean.vs", "../shaders/ocean/ocean.fs", "../shaders/ocean/ocean.geom");
+	ocean.read(this ,"../shaders/ocean/ocean.vert", "../shaders/ocean/ocean.frag", "../shaders/ocean/ocean.geom");
 	shaderList.push_back(ocean);
 }
-
-void WaterCloudShadowScene::renderWater()
+void WaterCloudShadowScene::drawWaterBlock(glm::vec3 position, glm::vec3 block_size, int offset, int big_scale)
 {
-	shaderList[0].useWater();
-
-	NewWaterShader first = shaderList[0];
-	glUseProgram(first.getId());
-	glUniform1f(uniformUvScroll, glfwGetTime() / 5);
-
-	mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
-
-	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(water_projection));
-	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
-	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
-
-	glm::vec3 position = water_pos + glm::vec3(10.0f, -15.0f, 7.0f);
+	offset /= big_scale;
 	glm::mat4 model = glm::mat4(1.0);
-
 	model = glm::translate(model, position);
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	model = glm::scale(model, block_size);
 	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
 	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
@@ -505,26 +501,28 @@ void WaterCloudShadowScene::renderWater()
 	waterTexture.UseTexture();
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();
+	//wave.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
 
-	const int offset = 88.5;
 	glm::vec3 position2 = glm::vec3(position.x, position.y, position.z + offset);
 	model = glm::mat4(1.0);
 	model = glm::translate(model, position2);
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	model = glm::scale(model, block_size);
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	waterTexture1.UseTexture();
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();
 
-	//第2部分
-	position = water_pos + glm::vec3(10 - 126.5, -15.0f, 7.0f);
+	////第2部分
+	//本应该-128
+	position = glm::vec3(position.x - 126.5 / big_scale, position.y, position.z);
 	model = glm::mat4(1.0);
 
 	model = glm::translate(model, position);
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	model = glm::scale(model, block_size);
 	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 
 	//位置，需要加载的矩阵数，列优先矩阵，指向数组的指针
@@ -532,18 +530,70 @@ void WaterCloudShadowScene::renderWater()
 	waterTexture2.UseTexture();
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();
+	//wave.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
 
 	position2 = glm::vec3(position.x, position.y, position.z + offset);
 	model = glm::mat4(1.0);
 	model = glm::translate(model, position2);
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, z.0f));
-	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 5.0f));
+	model = glm::scale(model, block_size);
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 	waterTexture3.UseTexture();
 	waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();
+	//wave.UseTexture();
+	//waterMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//meshList[0]->RenderMesh();
 
+}
+
+
+void WaterCloudShadowScene::renderWater()
+{
+	mainLight.setLightColor(water_color_type);
+	shaderList[0].useWater();
+
+	NewWaterShader first = shaderList[0];
+	glUseProgram(first.getId());
+	glUniform1f(uniformUvScroll, glfwGetTime() / 10);
+
+	mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
+
+	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(water_projection));
+	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix()));
+	glUniform3f(uniformEyePosition, camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
+
+	glm::vec3 position1 = water_pos + glm::vec3(0.0f, -15.0f, 0.0f);
+	glm::vec3 position2 = water_pos + glm::vec3(0.0f, -15.0f, -88.0f);
+	glm::vec3 position3 = water_pos + glm::vec3(0.0f, -15.0f, 88.0f);
+	glm::vec3 position4 = water_pos + glm::vec3(-126.0f, -15.0f, 0.0f);
+	glm::vec3 position5 = water_pos + glm::vec3(126.0f, -15.0f, 0.0f);
+	glm::vec3 position6 = water_pos + glm::vec3(126.0f, -15.0f, -88.0f);
+	glm::vec3 position7 = water_pos + glm::vec3(126.0f, -15.0f, 88.0f);
+	glm::vec3 position8 = water_pos + glm::vec3(-126.0f, -15.0f, 88.0f);
+	glm::vec3 position9 = water_pos + glm::vec3(-126.0f, -15.0f, -88.0f);
+	glm::vec3 position10 = water_pos + glm::vec3(0.0f, -15.0f, -176.0f);
+	glm::vec3 position11 = water_pos + glm::vec3(126.0f, -15.0f, -176.0f);
+	glm::vec3 position12 = water_pos + glm::vec3(-126.0f, -15.0f, -176.0f);
+
+	glm::vec3 block_size = glm::vec3(1.0f, 1.0f, 2.5f);
+	int offset = 88.5;
+	drawWaterBlock(position1, block_size, offset, 2);
+	drawWaterBlock(position2, block_size, offset, 2);
+	drawWaterBlock(position3, block_size, offset, 2);
+	drawWaterBlock(position4, block_size, offset, 2);
+	drawWaterBlock(position5, block_size, offset, 2);
+	drawWaterBlock(position6, block_size, offset, 2);
+	drawWaterBlock(position7, block_size, offset, 2);
+	drawWaterBlock(position8, block_size, offset, 2);
+	drawWaterBlock(position9, block_size, offset, 2);
+	//不画了，地平线交接的问题不能通过铺远解决，反而降低性能
+	//drawWaterBlock(position10, block_size, offset, 2);
+	//drawWaterBlock(position11, block_size, offset, 2);
+	//drawWaterBlock(position12, block_size, offset, 2);
 	glUseProgram(0);
 }
 
@@ -1005,7 +1055,7 @@ void WaterCloudShadowScene::getDirLightShadowMap()
 
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	if(dirLight1_isMoving)
-		lightModel = glm::rotate(lightModel, (float)glm::radians(glfwGetTime() * 100), glm::vec3(0.f, 1.f, 0.f));
+		lightModel = glm::rotate(lightModel, (float)glm::radians(glfwGetTime() * 30), glm::vec3(0.f, 1.f, 0.f));
 	//glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, dirLight1_nPlane, dirLight1_fPlane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
 	glm::mat4 lightProjection 
 		= glm::ortho(dirLight1_lPlane, dirLight1_rPlane, dirLight1_bPlane, dirLight1_tPlane, dirLight1_nPlane, dirLight1_fPlane);
@@ -1028,9 +1078,6 @@ void WaterCloudShadowScene::getDirLightShadowMap()
 	renderModels(simpleDepthShader,projection,view);
 
 
-	
-
-
 	/*for (auto it : this->actors) {
 		it.second->render(&simpleDepthShader);
 	}*/
@@ -1051,88 +1098,94 @@ void WaterCloudShadowScene::initModel()
 	// 准备派蒙。
 	Actor* paimon = new Actor;
 	paimon->setScale(glm::vec3(0.2));
-	paimon->setPosition(glm::vec3(0.0f, -5.0f, 0.0f));
-	this->addActor(paimon);
-
+	paimon->setYaw(45.0f);
+	paimon->setRoll(10.0f);
+	paimon->setPosition(glm::vec3(-1.0f, -10.0f, 5.0f));
+	this->addActor(paimon, CARACTOR_ID);
 	paimonModel = new Model("assets/genshin-impact/paimon/paimon.pmx");
 	paimon->bindModel(paimonModel);
-
-	if (characterShader.errcode != ShaderError::SHADER_OK) {
-		cout << "paimon shader err: " << characterShader.errmsg << endl;
-	}
 
 	//准备草神
 	Actor* nahida = new Actor;
 	nahida->setScale(glm::vec3(0.2));
+	nahida->setYaw(-5.0f);
 	nahida->setRoll(2.0f);
 	nahida->setPosition(glm::vec3(2.0f, -10.0f, 2.0f));
-	this->addActor(nahida);
-
+	this->addActor(nahida, CARACTOR_ID+1);
 	nahidaModel = new Model("assets/genshin-impact/nahida/nahida.pmx");
 	nahida->bindModel(nahidaModel);
 
-	/*if (characterShader.errcode != ShaderError::SHADER_OK) {
-		cout << "nahida shader err: " << characterShader.errmsg << endl;
-	}*/
-
 	//木头
 	Actor* wood1 = new Actor;
-	wood1->setScale(glm::vec3(0.2));
+	wood1->setScale(glm::vec3(0.3));
+	wood1->setYaw(-50.0f);
 	wood1->setRoll(2.0f);
-	wood1->setPosition(glm::vec3(-5.0f, -8.0f, 5.0f));
+	wood1->setPosition(glm::vec3(-2.0f, -10.31f, 6.0f));
 	this->addActor(wood1);
-
 	wood1Model = new Model("assets/SceneModels/wood1/Wood.obj");
 	wood1->bindModel(wood1Model);
 
-	/*if (characterShader.errcode != ShaderError::SHADER_OK) {
-		cout << "nahida shader err: " << characterShader.errmsg << endl;
-	}*/
-
 	//树
-	Actor* tree1 = new Actor;
-	tree1->setScale(glm::vec3(0.2));
-	tree1->setRoll(2.0f);
-	tree1->setPosition(glm::vec3(5.0f, -6.0f, 5.0f));
-	this->addActor(tree1);
+	//Actor* tree1 = new Actor;
+	//tree1->setScale(glm::vec3(0.5));
+	//tree1->setPosition(glm::vec3(0.0f, -10.0f, -12.0f));
+	//this->addActor(tree1 );
+	//tree1Model = new Model("assets/SceneModels/tree1/trees9.obj");
+	//tree1->bindModel(tree1Model);
 
-	tree1Model = new Model("assets/SceneModels/tree1/trees9.obj");
-	tree1->bindModel(tree1Model);
-	
+	Actor* tree2 = new Actor;
+	tree2->setScale(glm::vec3(0.4));
+	tree2->setYaw(135.0f);
+	tree2->setPosition(glm::vec3(6.0f, -10.0f, -9.0f));
+	this->addActor(tree2);
+	tree2Model = new Model("assets/SceneModels/tree1/trees9.obj");
+	tree2->bindModel(tree2Model);
+
+	/*Actor* tree3 = new Actor;
+	tree3->setScale(glm::vec3(0.4));
+	tree3->setYaw(-165.0f);
+	tree3->setPosition(glm::vec3(5.0f, -10.0f, 18.0f));
+	this->addActor(tree3);
+	tree3Model = new Model("assets/SceneModels/tree1/trees9.obj");
+	tree3->bindModel(tree3Model);*/
+
 	//鹿
 	Actor* deer1 = new Actor;
 	deer1->setScale(glm::vec3(0.1));
-	deer1->setRoll(90.0f);
-	deer1->setPosition(glm::vec3(6.0f, -8.0f, -11.0f));
+	deer1->setYaw(-15.0f);
+	deer1->setRoll(-90.0f);
+	deer1->setPosition(glm::vec3(6.0f, -10.0f, -8.5f));
 	this->addActor(deer1);
 	deer1Model = new Model("assets/SceneModels/deer1/12961_White-Tailed_Deer_v1_l2.obj");
 	deer1->bindModel(deer1Model);
 
 	Actor* deer2 = new Actor;
 	deer2->setScale(glm::vec3(0.1));
+	deer2->setYaw(-135.0f);
 	deer2->setRoll(-90.0f);
-	deer2->setPosition(glm::vec3(-6.0f, -7.0f, -13.0f));
+	deer2->setPosition(glm::vec3(9.0f, -10.0f, 2.0f));
 	this->addActor(deer2);
 	deer2Model = new Model("assets/SceneModels/deer1/12961_White-Tailed_Deer_v1_l2.obj");
 	deer2->bindModel(deer2Model);
 
-	//房子
-	Actor* house1 = new Actor;
-	house1->setScale(glm::vec3(0.2));
-	house1->setRoll(0.0f);
-	house1->setPosition(glm::vec3(-7.5f, -8.0f, -7.0f));
-	this->addActor(house1);
-	house1Model = new Model("assets/SceneModels/house1/House.obj");
-	house1->bindModel(house1Model);
+	Actor* deer3 = new Actor;
+	deer3->setScale(glm::vec3(0.08));
+	deer3->setYaw(160.0f);
+	deer3->setRoll(-90.0f);
+	deer3->setPosition(glm::vec3(-4.0f, -10.0f, 8.2f));
+	this->addActor(deer3);
+	deer3Model = new Model("assets/SceneModels/deer1/12961_White-Tailed_Deer_v1_l2.obj");
+	deer3->bindModel(deer3Model);
 
-	//建筑【有点问题，应该就是缺贴图路径】
-	/*Actor* building1 = new Actor;
-	building1->setScale(glm::vec3(0.2));
-	building1->setRoll(0.0f);
-	building1->setPosition(glm::vec3(10.5f, -8.0f, 10.0f));
-	this->addActor(house1);
-	building1Model = new Model("assets/SceneModels/building1/building_05.obj");
-	building1->bindModel(building1Model);*/
+	//房子
+	//Actor* house1 = new Actor;
+	//house1->setScale(glm::vec3(0.9));
+	//house1->setYaw(10.0f);
+	//house1->setRoll(0.0f);
+	//house1->setPosition(glm::vec3(-9.0f, -10.0f, -1.0f));
+	//this->addActor(house1);
+	//house1Model = new Model("assets/SceneModels/house1/House.obj");
+	//house1->bindModel(house1Model);
 }
 
 void WaterCloudShadowScene::setGUI()
@@ -1140,17 +1193,23 @@ void WaterCloudShadowScene::setGUI()
 	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Scene average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderFloat("cloud type", &cloud_density, 0.3f, 1.0f);
 	ImGui::ColorEdit3("cloud color", (float*)&(color_style));
-	ImGui::SliderFloat("time speed", &timespeed, 20.0f, 100.0f);
+
+	ImGui::SliderFloat("timespeed", &timespeed, 20.0f, 100.0f);
+
 
 	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Light Control");
 	ImGui::Checkbox("dynamic light", &dirLight1_isMoving);
-	
-	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Shadow Type"); 
+
+	ImGui::TextColored(ImVec4(1, 1, 0, 1), "water control");
+	ImGui::ColorEdit3("water color", (float*)&(water_color_type));
+
+
+	ImGui::TextColored(ImVec4(1, 1, 0, 1), "shadow Type"); 
 	ImGui::RadioButton("pcf square sample ", &dirLight1_shadowType, PCF_SQUARESAMPLE); 
 	ImGui::RadioButton("pcf Poisson sample", &dirLight1_shadowType, PCF_POISSONSAMPLE);
 	ImGui::RadioButton("pcss Poisson sample", &dirLight1_shadowType, PCSS_POISSONSAMPLE);
 	if(dirLight1_shadowType==PCSS_POISSONSAMPLE)
-		ImGui::SliderFloat("pcss light width", &dirLight1_width, 0.01f, 10.0f);
+		ImGui::SliderFloat("pcss light width", &dirLight1_width, 0.01f, 5.0f);
 }
 
 void WaterCloudShadowScene::initGUI()

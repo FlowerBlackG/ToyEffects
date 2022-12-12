@@ -1,0 +1,1 @@
+building1的mtl还没有配上纹理路径
