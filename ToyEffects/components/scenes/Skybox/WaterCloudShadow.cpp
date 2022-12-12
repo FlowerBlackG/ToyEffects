@@ -226,7 +226,18 @@ void WaterCloudShadowScene::render()
 
 void WaterCloudShadowScene::tick(float deltaT)
 {
+	static float accu = 0; // 累计时间
+	accu += deltaT;
+
 	// printf("%5.2f fps\r", 1 / deltaT);//输出FPS
+
+	auto pos = actors[CARACTOR_ID + 1]->getPosition(); // nahida
+	pos.y = 1 * sin(accu) - 8;
+	actors[CARACTOR_ID + 1]->setPosition(pos);
+
+
+	// paimon
+	actors[CARACTOR_ID]->setYaw(accu * 30);
 }
 
 void WaterCloudShadowScene::cursorPosCallback(double xPos, double yPos)
@@ -1138,7 +1149,7 @@ void WaterCloudShadowScene::initModel()
 	tree2->setYaw(135.0f);
 	tree2->setPosition(glm::vec3(6.0f, -10.0f, -9.0f));
 	this->addActor(tree2);
-	tree2Model = new Model("assets/SceneModels/tree1/trees9.obj");
+	tree2Model = new Model("assets/SceneModels/tree1/trees9.obj", false);
 	tree2->bindModel(tree2Model);
 
 	/*Actor* tree3 = new Actor;
@@ -1217,7 +1228,7 @@ void WaterCloudShadowScene::initGUI()
 	auto& app = AppRuntime::getInstance();
 	vcgui = new GUI(this, app.getWindow());
 	//enable mouse
-	glfwSetInputMode(app.getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	//glfwSetInputMode(app.getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void ShadowShader::read(const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::string& geometryShaderFilePath)

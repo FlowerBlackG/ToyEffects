@@ -149,7 +149,7 @@ void DOF::initGUI()
     auto& app = AppRuntime::getInstance();
     vcgui = new GUI(this, app.getWindow());
     //enable mouse
-    glfwSetInputMode(app.getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    //glfwSetInputMode(app.getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 DOF::DOF() {

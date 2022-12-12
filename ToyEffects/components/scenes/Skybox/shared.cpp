@@ -6,6 +6,7 @@
 #include <ToyEffects/scenes/Skybox/WaterScene.h>
 #include <ToyEffects/scenes/Skybox/VCloudScene.h>
 #include <ToyEffects/scenes/Skybox/shared.h>
+#include <ToyEffects/scenes/Skybox/DOF.h>
 
 #include <iostream>
 using namespace std;
@@ -119,28 +120,16 @@ void __nahidaPaimonSharedActiveKeyInputProcessor(GLFWwindow* window, float delta
         camera.move(-cameraSpeed, camera.getDirectionVectorUp());
     }
 
-    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS 
-        && runtime.lastFrameKeyStatus[GLFW_KEY_P] == GLFW_RELEASE
-    ) {
-        SceneManager::getInstance().navigateTo(PaimonScene::constructor);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS
-        && runtime.lastFrameKeyStatus[GLFW_KEY_V] == GLFW_RELEASE
-        ) {
-        SceneManager::getInstance().navigateTo(VCloudScene::constructor);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS
-        && runtime.lastFrameKeyStatus[GLFW_KEY_Z] == GLFW_RELEASE
-        ) {
-        SceneManager::getInstance().navigateTo(WaterScene::constructor);
-    }
-
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS 
         && runtime.lastFrameKeyStatus[GLFW_KEY_N] == GLFW_RELEASE
     ) {
         SceneManager::getInstance().navigateTo(NahidaScene::constructor);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS
+        && runtime.lastFrameKeyStatus[GLFW_KEY_V] == GLFW_RELEASE
+    ) {
+        SceneManager::getInstance().navigateTo(DOF::constructor);
     }
 
     

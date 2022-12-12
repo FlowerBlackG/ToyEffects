@@ -11,6 +11,17 @@
 #include "../imgui/imgui_impl_glfw.h"
 #include "../imgui/imgui_impl_opengl3.h"
 #include<glm/glm.hpp>
+
+static bool guiCallbackInstalled() {
+	static bool installed = false;
+	if (installed) {
+		return true;
+	} else {
+		installed = true;
+		return false;
+	}
+}
+
 /*
 	每个Scene可以实例化一个GUI
 	调用方式参考VCloudScene.cpp
@@ -27,14 +38,14 @@ public:
 		scene = pscene;
 		ImGui::CreateContext();
 		ImGui::StyleColorsDark();
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
+		ImGui_ImplGlfw_InitForOpenGL(window, !guiCallbackInstalled());
 		ImGui_ImplOpenGL3_Init("#version 130");
 	};
 	~GUI() {
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
+		//ImGui_ImplOpenGL3_Shutdown();
+		//ImGui_ImplGlfw_Shutdown();
+		//ImGui::DestroyContext();
 		
-		ImGui::DestroyContext();
 	};
 	
 	virtual void render() 
