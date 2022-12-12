@@ -141,6 +141,7 @@
     <ClCompile Include="components\scenes\Light.cpp" />
     <ClCompile Include="components\scenes\MainScene.cpp" />
     <ClCompile Include="components\scenes\Material.cpp" />
+    <ClCompile Include="components\scenes\Skybox\DOF.cpp" />
     <ClCompile Include="components\scenes\Skybox\NahidaScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\PaimonScene.cpp" />
     <ClCompile Include="components\scenes\Skybox\shared.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="include\ToyEffects\CompilerOptions.h" />
     <ClInclude Include="include\ToyEffects\scenes\MainScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\3Dmath.h" />
+    <ClInclude Include="include\ToyEffects\scenes\Skybox\DOF.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\NahidaScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\PaimonScene.h" />
     <ClInclude Include="include\ToyEffects\scenes\Skybox\shared.h" />
@@ -620,6 +622,10 @@
     <None Include="lib\include\glm\gtx\wrap.inl" />
     <None Include="shaders\cube.fs" />
     <None Include="shaders\cube.vs" />
+    <None Include="shaders\DOFshader.frag" />
+    <None Include="shaders\DOFshader.vert" />
+    <None Include="shaders\DOFshaderSecond.frag" />
+    <None Include="shaders\DOFshaderSecond.vert" />
     <None Include="shaders\postprocess-screen-shader.frag" />
     <None Include="shaders\postprocess-screen-shader.vert" />
     <None Include="shaders\shader.frag" />
