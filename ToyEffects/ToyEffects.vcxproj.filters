@@ -1560,6 +1560,7 @@
     <None Include="shaders\ShadowTest\shadowMapping.vs">
       <Filter>Source Files\shaders\shadow</Filter>
     </None>
+
     <None Include="shaders\DOFshader.frag">
       <Filter>Source Files\shaders</Filter>
     </None>
@@ -1571,6 +1572,11 @@
     </None>
     <None Include="shaders\DOFshaderSecond.vert">
       <Filter>Source Files\shaders</Filter>
+    </None>
+
+    <None Include="..\shaders\ocean\ocean.vert">
+      <Filter>Source Files\shaders\shadow</Filter>
+
     </None>
   </ItemGroup>
 </Project>

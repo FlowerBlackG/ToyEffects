@@ -29,6 +29,11 @@ void Light::UseLight(GLfloat ambientIntensityLocation, GLfloat ambientColorLocat
 	glUniform1f(diffuseIntensityLocation, diffuseIntensity);
 }
 
+void Light::setLightColor(glm::vec3 newcolor)
+{
+	color = newcolor;
+}
+
 Light::~Light()
 {
 
