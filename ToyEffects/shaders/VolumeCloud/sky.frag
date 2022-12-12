@@ -1,5 +1,5 @@
 #version 330 core
-//Ïà»úÒÆ¶¯Ì«Ô¶»á³öÎÊÌâ
+//ç›¸æœºç§»åŠ¨å¤ªè¿œä¼šå‡ºé—®é¢˜
 //add sky box
 uniform sampler3D perlworl;
 uniform sampler3D worl;
@@ -12,11 +12,11 @@ uniform float aspect;
 uniform float time;
 uniform vec2 resolution;
 uniform float downscale;
-//×ÜÌåÔÆ²ãÃÜ¶È
+//æ€»ä½“äº‘å±‚å¯†åº¦
 uniform float cloud_density;
-//ÑÕÉ«
+//é¢œè‰²
 uniform vec3 color_style;
-//±ä»¯ËÙ¶È
+//å˜åŒ–é€Ÿåº¦
 uniform float speed;
 uniform vec3 cameraPos ;
 
@@ -62,7 +62,7 @@ const vec3 RANDOM_VECTORS[6] = vec3[6]
 	vec3(-0.16852403f,  0.14748697f,  0.97460106f)
 	);
 
-//µãÔÚÔÆ²ãÖĞµÄÎ»ÖÃ fractional value for sample position in the cloud layer
+//ç‚¹åœ¨äº‘å±‚ä¸­çš„ä½ç½® fractional value for sample position in the cloud layer
 float GetHeightFractionForPoint(float inPosition)
 { // get global fractional position in cloud zone
 	float height_fraction = (inPosition -  sky_b_radius) / (sky_t_radius - sky_b_radius); 
@@ -100,7 +100,7 @@ float remap(const float originalValue, const float originalMin, const float orig
 {
 	return newMin + (((originalValue - originalMin) / (originalMax - originalMin)) * (newMax - newMin));
 }
-//ÔÆ²ãÃÜ¶È¼ÆËã
+//äº‘å±‚å¯†åº¦è®¡ç®—
 float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
 	p.x += time*speed;
 	float height_fraction = GetHeightFractionForPoint(length(p));
@@ -122,12 +122,12 @@ float density(vec3 p, vec3 weather,const bool hq,const float LOD) {
 	return clamp(base_cloud, 0.0, 1.0);
 }
 
-#define Ambient  vec3(.7,.7,.7)    // »ù´¡É¢Éä
+#define Ambient  vec3(.6,.6,.6)    // åŸºç¡€æ•£å°„
 
 vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	float T = 1.0;
-	float alpha = 0.0;//³õÊ¼Í¸Ã÷¶È
-	vec3 p = pos;		//ÊÀ½ç×ø±ê
+	float alpha = 0.0;//åˆå§‹é€æ˜åº¦
+	vec3 p = pos;		//ä¸–ç•Œåæ ‡
 	float ss = length(dir);
 	const float t_dist = sky_t_radius-sky_b_radius;
 	float lss = t_dist/float(depth);
@@ -151,7 +151,7 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 		float lt = 1.0;
 		float ncd = 0.0;
 		float cd = 0.0;
-		if (t>0.0) { //ÃÜ¶È²»Îª0Ê±²Å¼ÆËã¹âÕÕ
+		if (t>0.0) { //å¯†åº¦ä¸ä¸º0æ—¶æ‰è®¡ç®—å…‰ç…§
 			for (int j=0;j<6;j++) {
 				lp += (ldir+(RANDOM_VECTORS[j]*float(j+1))*lss);
 				vec3 lweather = texture(weather, lp.xz*weather_scale).xyz;
@@ -179,7 +179,9 @@ vec4 march(const vec3 pos, const vec3 end, vec3 dir, const int depth) {
 	L = max(L,vec3(0.4,0.4,0.4)) * color_style;//vec3(0.8,0.5,0.8)
 	return vec4(L, alpha);
 }
+
 #define MIN_LIGHTNESS 0.8
+
 void main()
 {
 	vec2 shift = vec2(floor(float(check)/downscale), mod(float(check), downscale));	
@@ -197,8 +199,8 @@ void main()
 	if (dir.y>0.0) {
 	
 		vec3 camPos = cameraPos+vec3(0.0, g_radius, 0.0);
-		vec3 start = camPos+dir*intersectSphere(camPos, dir, sky_b_radius);//¼ÆËãÔÆ²ãµ×²¿ÏòÁ¿
-		vec3 end =min( camPos+dir*intersectSphere(camPos, dir, sky_t_radius),start+dir*500);//¼ÆËãÔÆ²ã¶¥²¿ÏòÁ¿
+		vec3 start = camPos+dir*intersectSphere(camPos, dir, sky_b_radius);//è®¡ç®—äº‘å±‚åº•éƒ¨å‘é‡
+		vec3 end =min( camPos+dir*intersectSphere(camPos, dir, sky_t_radius),start+dir*500);//è®¡ç®—äº‘å±‚é¡¶éƒ¨å‘é‡
 		const float t_dist = sky_t_radius-sky_b_radius;
 		float shelldist = (length(end-start));
 		
@@ -206,11 +208,11 @@ void main()
 		float dmod = smoothstep(0.0, 1.0, (shelldist/t_dist)/14.0);
 		float s_dist = mix(t_dist, t_dist*4.0, dmod)/(steps);
 		vec3 raystep = dir*s_dist;
-		vec4 volume;//ÔÆ²ã
-		//ray marching »ñµÃÔÆÁ¿ºÍÑÕÉ«
+		vec4 volume;//äº‘å±‚
+		//ray marching è·å¾—äº‘é‡å’Œé¢œè‰²
 		//volume = march(start, end, raystep, int(steps));
-		volume = march(start, end, raystep*2, int(steps)/2);//½µ²ÉÑù
-		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//ÔÆÁ¿¿ØÖÆÔÚÒ»¶¨µÄ·¶Î§
+		volume = march(start, end, raystep*2, int(steps)/2);//é™é‡‡æ ·
+		volume.xyz = U2Tone(volume.xyz)*cwhiteScale;//äº‘é‡æ§åˆ¶åœ¨ä¸€å®šçš„èŒƒå›´
 		volume.xyz = sqrt(volume.xyz);
 		volume.a=min(volume.a,0.95);
 		vec3 background = vec3(0.4,0.4,0.4);

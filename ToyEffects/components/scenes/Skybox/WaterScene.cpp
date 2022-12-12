@@ -675,7 +675,7 @@ void WaterScene::setGUI()
 	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Scene average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderFloat("cloud type", &cloud_density, 0.3f, 1.0f);
 	ImGui::ColorEdit3("cloud color", (float*)&(color_style));
-	ImGui::SliderFloat("cloud type", &timespeed, 20.0f, 100.0f);
+	ImGui::SliderFloat("timespeed", &timespeed, 20.0f, 100.0f);
 };
 void WaterScene::renderCloud()
 {
